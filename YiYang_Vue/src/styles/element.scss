@@ -1,0 +1,15 @@
+:root {
+  --el-color-primary: #3f7c66;
+  --el-border-radius-base: 12px;
+  --el-border-radius-small: 10px;
+  --el-fill-color-blank: rgb(255 255 255 / 88%);
+}
+
+.el-card {
+  border-color: var(--yy-color-border);
+}
+
+.el-card.is-always-shadow,
+.el-card.is-hover-shadow:hover {
+  box-shadow: var(--yy-shadow-card);
+}

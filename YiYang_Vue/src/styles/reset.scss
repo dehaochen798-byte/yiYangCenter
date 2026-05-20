@@ -1,0 +1,27 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100vh;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: var(--yy-color-text);
+  background:
+    radial-gradient(circle at top left, rgb(232 244 236 / 96%), transparent 30%),
+    linear-gradient(180deg, #f8fbf8 0%, #edf5ef 100%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
