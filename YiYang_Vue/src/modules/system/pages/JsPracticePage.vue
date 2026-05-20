@@ -1,250 +1,262 @@
 <template>
-  <div class="js-lab-page">
-    <div class="js-lab-page__topbar">
-      <el-button plain round @click="router.push('/auth/login')">返回登录</el-button>
-      <el-tag type="success" effect="light">独立测试页</el-tag>
-    </div>
-
-    <el-row :gutter="20">
-      <el-col :xs="24" :xl="15">
-        <el-card shadow="never" class="js-lab-page__hero">
-          <template #header>
-            <div class="page-header">
-              <div>
-                <h2>JavaScript 基本功测试页</h2>
-                <span>这个页面只用于练习，不和业务系统其他界面关联。</span>
-              </div>
-            </div>
-          </template>
-
-          <el-space wrap>
-            <el-tag v-for="topic in practiceTopics" :key="topic" round>
-              {{ topic }}
-            </el-tag>
-          </el-space>
-
-          <div class="js-lab-page__section">
-            <h3>数组练习</h3>
-            <el-input
-              v-model="numbersInput"
-              placeholder="请输入逗号分隔的数字"
-            />
-            <el-button type="primary" @click="runArrayPractice">
-              运行数组练习
-            </el-button>
-          </div>
-
-          <div class="js-lab-page__section">
-            <h3>字符串练习</h3>
-            <el-input
-              v-model="sentenceInput"
-              type="textarea"
-              :rows="3"
-              placeholder="输入一句练习文本"
-            />
-            <el-button type="primary" @click="runStringPractice">
-              运行字符串练习
-            </el-button>
-          </div>
-
-          <div class="js-lab-page__section">
-            <h3>对象练习</h3>
-            <p>点击后会展示一个养老客户对象的常见 JS 操作结果。</p>
-            <el-button type="primary" @click="runObjectPractice">
-              运行对象练习
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="24" :xl="9">
-        <el-card shadow="never" class="js-lab-page__result">
-          <template #header>
-            <div class="page-header">
-              <div>
-                <h2>输出结果</h2>
-                <span>建议先猜结果，再点按钮验证。</span>
-              </div>
-              <el-button link @click="clearOutput">清空</el-button>
-            </div>
-          </template>
-
-          <el-empty
-            v-if="output.length === 0"
-            description="运行任意练习后会在这里显示结果"
-          />
-
-          <div v-else class="js-lab-page__output-list">
-            <div
-              v-for="item in output"
-              :key="item.label"
-              class="js-lab-page__output-item"
-            >
-              <strong>{{ item.label }}</strong>
-              <pre>{{ item.value }}</pre>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-  </div>
+  <div></div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+//day1
+//1
+// let score = 100
+// const getLevel = (score) => {
+//   if (score >= 90) {
+//     return 'A'
+//   } else if (score >= 80) {
+//     return 'B'
+//   } else if (score >= 60) {
+//     return 'C'
+//   } else {
+//     return 'D'
+//   }
+// }
+// getLevel(score)
+// //2
+// const goods = [
+//   { id: 1, name: '苹果', price: 80 },
+//   { id: 2, name: '香蕉', price: 120 },
+//   { id: 3, name: '西瓜', price: 200 },
+// ]
+// let result = goods.filter((item) => item.price > 100)
+// console.log(result)
+// //3
+// const searchList = (key) => {
+//   const list = [
+//     { id: 1, name: '苹果' },
+//     { id: 2, name: '香蕉' },
+//     { id: 3, name: '苹果汁' },
+//   ]
+//   if (key) {
+//     return list.filter((item) => item.name.includes(key))
+//   }
+//   return list
+// }
+// const result2 = searchList('苹果')
+// console.log(result2)
+// //4
+// const users = [
+//   { id: 1, name: 'Tom', age: 16 },
+//   { id: 2, name: 'Jack', age: 20 },
+//   { id: 3, name: 'Lucy', age: 22 },
+// ]
+// const adultUser = users.find((item) => item.age >= 18)
+// console.log(adultUser)
+// //5
+// let todos = [
+//   { id: 1, text: '吃饭' },
+//   { id: 2, text: '睡觉' },
+//   { id: 3, text: '敲代码' },
+// ]
+// const removeToDo = (id) => {
+//   todos = todos.filter((item) => item.id != id)
+//   console.log(todos)
+// }
+// removeToDo(2)
 
-const router = useRouter()
+// day1
+// 第 2 组题：比上一组高半级，重点是把筛选、查找、映射、条件判断拼起来用
 
-const numbersInput = ref('3, 7, 2, 9, 4, 12')
-const sentenceInput = ref('颐养中心欢迎你坚持练习 JavaScript 基本功')
-const output = ref([])
-
-const parsedNumbers = computed(() =>
-  numbersInput.value
-    .split(',')
-    .map((item) => Number(item.trim()))
-    .filter((item) => !Number.isNaN(item))
-)
-
-function setOutput(items) {
-  output.value = items
-}
-
-function runArrayPractice() {
-  const numbers = parsedNumbers.value
-
-  setOutput([
-    { label: '原始数组', value: JSON.stringify(numbers) },
-    { label: 'map * 2', value: JSON.stringify(numbers.map((item) => item * 2)) },
-    { label: 'filter 偶数', value: JSON.stringify(numbers.filter((item) => item % 2 === 0)) },
-    { label: 'reduce 求和', value: numbers.reduce((sum, item) => sum + item, 0) },
-    { label: 'sort 升序', value: JSON.stringify([...numbers].sort((a, b) => a - b)) },
-  ])
-}
-
-function runStringPractice() {
-  const text = sentenceInput.value.trim()
-  const words = text.split(/\s+/).filter(Boolean)
-
-  setOutput([
-    { label: '原始字符串', value: text },
-    { label: '长度', value: text.length },
-    { label: '去空格后', value: text.replace(/\s+/g, '') },
-    { label: '按空格分词', value: JSON.stringify(words) },
-    { label: '是否包含 JavaScript', value: text.includes('JavaScript') ? '是' : '否' },
-  ])
-}
-
-function runObjectPractice() {
-  const resident = {
-    id: 'C20260520',
-    realName: '张阿姨',
-    age: 68,
-    room: '2-302',
-    tags: ['膳食定制', '护理二级'],
-  }
-
-  const { realName, room, tags } = resident
-
-  setOutput([
-    { label: '原对象', value: JSON.stringify(resident, null, 2) },
-    { label: '解构后的姓名', value: realName },
-    { label: '模板字符串', value: `${realName} 当前入住 ${room}` },
-    { label: '展开运算符合并', value: JSON.stringify({ ...resident, status: '在住' }) },
-    { label: 'tags join', value: tags.join('、') },
-  ])
-}
-
-function clearOutput() {
-  output.value = []
-}
-
-const practiceTopics = [
-  '变量、作用域、数据类型',
-  '数组 map / filter / reduce / sort',
-  '字符串 split / trim / includes / replace',
-  '对象解构、展开运算符、模板字符串',
-  '条件判断、循环、函数封装',
+// 1. 商品搜索 + 价格过滤
+// 现有数据如下：
+const goodsList = [
+  { id: 1, name: '苹果', price: 80 },
+  { id: 2, name: '苹果汁', price: 120 },
+  { id: 3, name: '香蕉', price: 150 },
+  { id: 4, name: '西瓜', price: 90 },
 ]
+//
+// 请写一个函数 searchGoods(keyword)
+// 要求：
+// - 返回 name 里包含 keyword 的商品
+// - 并且这些商品的 price 必须大于 100
+// - 如果 keyword 是空字符串，返回所有 price 大于 100 的商品
+const searchGoods = (keyword) => {
+  let arr
+  if (keyword) {
+    arr = goodsList.filter((item) => item.name.includes(keyword))
+  } else {
+    arr = goodsList
+  }
+  return arr.filter((item) => item.price > 100)
+}
+searchGoods('西瓜')
+// 2. 处理用户名数组
+// 现有数据如下：
+const usersList = [
+  { id: 1, name: 'tom' },
+  { id: 2, name: 'jack' },
+  { id: 3, name: 'lucy' },
+]
+//
+// 请写代码得到一个新数组 nameList
+// 要求：
+// - 数组内容只包含 name
+// - 结果格式：['tom', 'jack', 'lucy']
+let nameList = usersList.map((item) => item.name)
+console.log('namelist:', nameList)
+// 3. 查找符合条件的第一个商品
+// 现有数据如下：
+const productList = [
+  { id: 1, name: '键盘', stock: 0 },
+  { id: 2, name: '鼠标', stock: 5 },
+  { id: 3, name: '屏幕', stock: 10 },
+]
+//
+// 请写代码找到第一个 stock 大于 0 的商品
+// 结果赋值给 firstAvailableProduct
+let firstAvailableProduct = productList.find((item) => item.stock > 0)
+console.log(firstAvailableProduct)
+// 4. 状态判断函数
+// 请写一个函数 getStatusText(status)
+// 要求：
+// - status === 0 返回 '待开始'
+// - status === 1 返回 '进行中'
+// - status === 2 返回 '已完成'
+// - 其他返回 '未知状态'
+const getStatusText = (status) => {
+  if (status === 0) {
+    return '待开始'
+  } else if (status === 1) {
+    return '进行中'
+  } else if (status === 2) {
+    return '已完成'
+  } else {
+    return '未知状态'
+  }
+}
+getStatusText(1)
+// 5. 删除指定分类商品
+// 现有数据如下：
+let cartList = [
+  { id: 1, name: '苹果', category: 'fruit' },
+  { id: 2, name: '可乐', category: 'drink' },
+  { id: 3, name: '香蕉', category: 'fruit' },
+  { id: 4, name: '牛奶', category: 'drink' },
+]
+//
+// 请写一个函数 removeByCategory(category)
+// 要求：
+// - 调用 removeByCategory('fruit') 后
+// - cartList 中只保留 category 不等于 'fruit' 的项
+// - 直接修改 cartList 变量
+const removeByCategory = (category) => {
+  cartList = cartList.filter((item) => item.category != category)
+}
+removeByCategory('fruit')
+console.log(cartList)
+// 6. 组合题：先筛选，再转换
+// 现有数据如下：
+const scoreList = [
+  { id: 1, name: '小明', score: 56 },
+  { id: 2, name: '小红', score: 87 },
+  { id: 3, name: '小刚', score: 92 },
+]
+//
+// 请写代码得到一个新数组 passedNames
+// 要求：
+// - 先找出 score 大于等于 60 的人
+// - 再把这些人的 name 取出来
+// - 结果格式：['小红', '小刚']
+let passedNames = scoreList.filter((item) => item.score >= 60).map((item) => item.name)
+console.log(passedNames)
+
+// day1
+// 第 3 组题：开始加入多条件、判空、简单统计，还是以数组处理和条件判断为主
+
+// 1. 多条件搜索商品
+// 现有数据如下：
+const shopList = [
+  { id: 1, name: '苹果', price: 80, category: 'fruit' },
+  { id: 2, name: '苹果汁', price: 120, category: 'drink' },
+  { id: 3, name: '香蕉', price: 150, category: 'fruit' },
+  { id: 4, name: '可乐', price: 90, category: 'drink' },
+]
+//
+// 请写一个函数 filterShopList(keyword, category)
+// 要求：
+// - name 里包含 keyword
+// - category 必须等于传入的 category
+// - 如果 keyword 是空字符串，就只按 category 过滤
+// - 返回过滤后的新数组
+const filterShopList=(keyword, category)=>{
+  
+}
+// 2. 找出第一个未完成任务
+// 现有数据如下：
+// const taskList = [
+//   { id: 1, title: '写页面', done: true },
+//   { id: 2, title: '联调接口', done: false },
+//   { id: 3, title: '提测', done: false },
+// ]
+//
+// 请写代码找到第一个 done 为 false 的任务
+// 结果赋值给 firstUndoTask
+
+// 3. 只保留库存大于 0 的商品名
+// 现有数据如下：
+// const stockList = [
+//   { id: 1, name: '键盘', stock: 0 },
+//   { id: 2, name: '鼠标', stock: 3 },
+//   { id: 3, name: '耳机', stock: 8 },
+// ]
+//
+// 请写代码得到一个新数组 stockNameList
+// 要求：
+// - 先筛选出 stock 大于 0 的项
+// - 再把这些项的 name 组成一个新数组
+// - 结果格式：['鼠标', '耳机']
+
+// 4. 统计及格人数
+// 现有数据如下：
+// const examList = [
+//   { id: 1, name: '小明', score: 58 },
+//   { id: 2, name: '小红', score: 76 },
+//   { id: 3, name: '小刚', score: 91 },
+//   { id: 4, name: '小丽', score: 43 },
+// ]
+//
+// 请写代码统计 score 大于等于 60 的人数
+// 结果赋值给 passCount
+
+// 5. 判空返回提示
+// 请写一个函数 getKeywordText(keyword)
+// 要求：
+// - 如果 keyword 是空字符串，返回 '请输入关键词'
+// - 如果 keyword 不是空字符串，返回 '正在搜索：' + keyword
+
+// 6. 删除未完成任务
+// 现有数据如下：
+// let todoTaskList = [
+//   { id: 1, title: '写文档', done: true },
+//   { id: 2, title: '修 bug', done: false },
+//   { id: 3, title: '发版本', done: true },
+//   { id: 4, title: '补测试', done: false },
+// ]
+//
+// 请写一个函数 removeUndoTask()
+// 要求：
+// - 删除所有 done 为 false 的项
+// - 直接修改 todoTaskList
+
+// 7. 综合题：先过滤，再返回名称
+// 现有数据如下：
+// const orderList = [
+//   { id: 1, name: '订单A', status: 0 },
+//   { id: 2, name: '订单B', status: 1 },
+//   { id: 3, name: '订单C', status: 2 },
+// ]
+//
+// 请写一个函数 getProcessingOrderNames()
+// 要求：
+// - 先找出 status === 1 的订单
+// - 再返回这些订单的 name 组成的新数组
+// - 结果格式：['订单B']
+
 </script>
-
-<style scoped lang="scss">
-.js-lab-page {
-  width: min(1200px, 100%);
-  margin: 0 auto;
-
-  &__topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-
-  &__hero,
-  &__result {
-    border-radius: 24px;
-  }
-
-  &__section {
-    display: grid;
-    gap: 12px;
-    padding-top: 24px;
-    margin-top: 24px;
-    border-top: 1px solid rgb(79 120 97 / 14%);
-
-    h3,
-    p {
-      margin: 0;
-    }
-
-    h3 {
-      font-size: 18px;
-      color: #1e3a33;
-    }
-
-    p {
-      font-size: 14px;
-      color: #6d857c;
-    }
-  }
-
-  &__output-list {
-    display: grid;
-    gap: 14px;
-  }
-
-  &__output-item {
-    padding: 16px;
-    color: #33554a;
-    background: #f4f8f5;
-    border: 1px solid rgb(79 120 97 / 12%);
-    border-radius: 16px;
-
-    strong {
-      display: block;
-      margin-bottom: 8px;
-    }
-
-    pre {
-      margin: 0;
-      overflow-x: auto;
-      font-family: 'Cascadia Code', Consolas, monospace;
-      font-size: 13px;
-      line-height: 1.6;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-  }
-}
-
-@media (max-width: 960px) {
-  .js-lab-page {
-    &__topbar {
-      flex-direction: column;
-      gap: 12px;
-      align-items: flex-start;
-    }
-  }
-}
-</style>
