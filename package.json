@@ -1,0 +1,20 @@
+{
+  "name": "yiyang-center",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "YiYang_Vue",
+    "YiYang_Node"
+  ],
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev:vue": "npm run dev -w YiYang_Vue",
+    "dev:node": "npm run start:dev -w YiYang_Node",
+    "build": "npm run build -w YiYang_Vue && npm run build -w YiYang_Node",
+    "lint": "npm run lint -w YiYang_Vue && npm run lint -w YiYang_Node",
+    "format": "npm run format -w YiYang_Vue && npm run format -w YiYang_Node"
+  }
+}

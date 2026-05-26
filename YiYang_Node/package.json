@@ -2,19 +2,25 @@
   "name": "yiyang-node",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "description": "YiYang Center backend powered by NestJS and Prisma",
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",
+    "start:prod": "node dist/src/main.js",
     "lint": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\" --fix",
     "format": "prettier . --write",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "node --loader ts-node/esm prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.1",
@@ -23,10 +29,12 @@
     "@nestjs/jwt": "^11.0.1",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.1",
-    "@prisma/client": "^6.8.2",
+    "@prisma/adapter-mariadb": "^7.0.0",
+    "@prisma/client": "^7.0.0",
     "bcryptjs": "^3.0.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "dotenv": "^17.2.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
@@ -46,7 +54,7 @@
     "eslint-plugin-prettier": "^5.2.6",
     "globals": "^16.1.0",
     "prettier": "^3.5.3",
-    "prisma": "^6.8.2",
+    "prisma": "^7.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0"

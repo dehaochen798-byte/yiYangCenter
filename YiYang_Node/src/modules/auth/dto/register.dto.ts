@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsNotEmpty, IsString, Max, Min } from 'class-validator'
-import { GenderEnum } from '../../../common/enums/gender.enum'
+import { GenderEnum } from '../../../common/enums/gender.enum.js'
 
 export class RegisterDto {
   @IsString()

@@ -1,6 +1,7 @@
-import AuthLayout from '../../../layouts/AuthLayout.vue'
+import type { RouteRecordRaw } from 'vue-router'
+import AuthLayout from '@/layouts/AuthLayout.vue'
 
-export const authRoutes = [
+export const authRoutes: RouteRecordRaw[] = [
   {
     path: '/auth',
     component: AuthLayout,
@@ -13,7 +14,7 @@ export const authRoutes = [
       {
         path: 'login',
         name: 'login',
-        component: () => import('../../../modules/auth/pages/LoginPage.vue'),
+        component: () => import('@/modules/auth/pages/LoginPage.vue'),
         meta: {
           title: '登录',
         },
@@ -21,7 +22,7 @@ export const authRoutes = [
       {
         path: 'register',
         name: 'register',
-        component: () => import('../../../modules/auth/pages/RegisterPage.vue'),
+        component: () => import('@/modules/auth/pages/RegisterPage.vue'),
         meta: {
           title: '注册',
         },
@@ -29,7 +30,7 @@ export const authRoutes = [
       {
         path: 'js-lab',
         name: 'js-lab',
-        component: () => import('../../../modules/system/pages/JsPracticePage.vue'),
+        component: () => import('@/modules/system/pages/JsPracticePage.vue'),
         meta: {
           title: 'JS 测试页',
         },

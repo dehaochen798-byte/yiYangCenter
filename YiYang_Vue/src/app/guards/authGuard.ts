@@ -1,6 +1,7 @@
-import { useAuthStore } from '../../modules/auth/store/auth.store'
+import type { Router } from 'vue-router'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 
-export function setupAuthGuard(router) {
+export function setupAuthGuard(router: Router) {
   router.beforeEach((to) => {
     const authStore = useAuthStore()
     const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)

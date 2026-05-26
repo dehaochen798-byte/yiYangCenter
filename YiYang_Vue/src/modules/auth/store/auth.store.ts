@@ -1,13 +1,18 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
+interface AuthProfile {
+  realName: string
+  mobile: string
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const token = ref('')
-  const profile = ref(null)
+  const profile = ref<AuthProfile | null>(null)
 
   const isLoggedIn = computed(() => Boolean(token.value))
 
-  function login(payload) {
+  function login(payload: AuthProfile) {
     token.value = 'demo-token'
     profile.value = {
       realName: payload.realName || '演示用户',

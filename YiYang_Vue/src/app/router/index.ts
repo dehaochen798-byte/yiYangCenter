@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { setupAuthGuard } from '@/app/guards/authGuard'
 import { authRoutes } from './modules/auth.routes'
 import { customerRoutes } from './modules/customer.routes'
 import { nursingRoutes } from './modules/nursing.routes'
-import { setupAuthGuard } from '../guards/authGuard'
 
 const routes = [
   {
