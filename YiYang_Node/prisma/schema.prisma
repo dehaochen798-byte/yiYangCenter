@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum ResidenceStatus {
+  PENDING
+  ACTIVE
+  CHECKED_OUT
+}
+
+enum OutingStatus {
+  PENDING
+  APPROVED
+  RETURNED
+}
+
+model User {
+  id           Int              @id @default(autoincrement())
+  mobile       String           @unique @db.VarChar(20)
+  passwordHash String
+  realName     String           @db.VarChar(50)
+  age          Int
+  gender       Gender
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  residents    Resident[]
+  careRecords  CareRecord[]
+}
+
+model Resident {
+  id              Int                @id @default(autoincrement())
+  userId          Int?
+  fullName        String             @db.VarChar(50)
+  age             Int
+  gender          Gender
+  phone           String             @unique @db.VarChar(20)
+  status          ResidenceStatus    @default(PENDING)
+  note            String?            @db.Text
+  user            User?              @relation(fields: [userId], references: [id])
+  checkIns        CheckIn[]
+  checkOuts       CheckOut[]
+  outings         Outing[]
+  mealPlans       MealPlan[]
+  serviceTargets  ServiceTarget[]
+  serviceFocuses  ServiceFocus[]
+  careRecords     CareRecord[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  roomNo      String   @unique @db.VarChar(30)
+  floor       Int
+  bedCount    Int
+  description String?  @db.VarChar(255)
+  beds        Bed[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Bed {
+  id          Int       @id @default(autoincrement())
+  roomId      Int
+  bedNo       String    @db.VarChar(30)
+  isOccupied  Boolean   @default(false)
+  room        Room      @relation(fields: [roomId], references: [id])
+  checkIns    CheckIn[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([roomId, bedNo])
+}
+
+model MealPlan {
+  id          Int      @id @default(autoincrement())
+  residentId  Int
+  title       String   @db.VarChar(100)
+  description String?  @db.Text
+  resident    Resident @relation(fields: [residentId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MealCalendar {
+  id          Int      @id @default(autoincrement())
+  weekLabel   String   @db.VarChar(50)
+  monday      String?  @db.VarChar(255)
+  tuesday     String?  @db.VarChar(255)
+  wednesday   String?  @db.VarChar(255)
+  thursday    String?  @db.VarChar(255)
+  friday      String?  @db.VarChar(255)
+  saturday    String?  @db.VarChar(255)
+  sunday      String?  @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CheckIn {
+  id          Int      @id @default(autoincrement())
+  residentId  Int
+  bedId       Int
+  checkInAt   DateTime
+  note        String?  @db.Text
+  resident    Resident @relation(fields: [residentId], references: [id])
+  bed         Bed      @relation(fields: [bedId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CheckOut {
+  id          Int      @id @default(autoincrement())
+  residentId  Int
+  checkOutAt  DateTime
+  reason      String?  @db.Text
+  resident    Resident @relation(fields: [residentId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Outing {
+  id          Int          @id @default(autoincrement())
+  residentId  Int
+  startAt     DateTime
+  endAt       DateTime?
+  destination String?      @db.VarChar(255)
+  status      OutingStatus @default(PENDING)
+  resident    Resident     @relation(fields: [residentId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model ServiceTarget {
+  id             Int      @id @default(autoincrement())
+  residentId     Int
+  managerName    String   @db.VarChar(50)
+  managerMobile  String   @db.VarChar(20)
+  relationNote   String?  @db.Text
+  resident       Resident @relation(fields: [residentId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ServiceFocus {
+  id          Int      @id @default(autoincrement())
+  residentId  Int
+  serviceName String   @db.VarChar(100)
+  detail      String?  @db.Text
+  resident    Resident @relation(fields: [residentId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CareLevel {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(50)
+  description String?  @db.Text
+  items       CareItem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CareItem {
+  id          Int        @id @default(autoincrement())
+  careLevelId Int
+  name        String     @db.VarChar(100)
+  description String?    @db.Text
+  careLevel   CareLevel  @relation(fields: [careLevelId], references: [id])
+  records     CareRecord[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model CareRecord {
+  id          Int      @id @default(autoincrement())
+  residentId  Int
+  careItemId  Int
+  operatorId  Int
+  executedAt  DateTime
+  note        String?  @db.Text
+  resident    Resident @relation(fields: [residentId], references: [id])
+  careItem    CareItem @relation(fields: [careItemId], references: [id])
+  operator    User     @relation(fields: [operatorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
