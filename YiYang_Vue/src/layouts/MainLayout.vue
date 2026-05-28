@@ -58,7 +58,7 @@
             <el-tag type="success" effect="light">已登录</el-tag>
             <el-dropdown>
               <span class="toolbar__user">
-                {{ authStore.profile?.realName || '系统管理员' }}
+                {{ authStore.profile?.nickName || '系统管理员' }}
                 <el-icon><Management /></el-icon>
               </span>
               <template #dropdown>

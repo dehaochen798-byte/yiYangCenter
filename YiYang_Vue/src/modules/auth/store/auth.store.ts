@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 
 interface AuthProfile {
-  realName: string
+  nickName: string
   mobile: string
 }
 
@@ -15,7 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
   function login(payload: AuthProfile) {
     token.value = 'demo-token'
     profile.value = {
-      realName: payload.realName || '演示用户',
+      nickName: payload.nickName || '演示用户',
       mobile: payload.mobile,
     }
   }

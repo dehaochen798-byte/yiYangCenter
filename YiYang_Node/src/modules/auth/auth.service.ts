@@ -29,14 +29,14 @@ export class AuthService {
       data: {
         mobile: dto.mobile,
         passwordHash,
-        realName: dto.realName,
+        nickName: dto.nickName,
         age: dto.age,
         gender: dto.gender,
       },
       select: {
         id: true,
         mobile: true,
-        realName: true,
+        nickName: true,
         age: true,
         gender: true,
       },
@@ -79,7 +79,7 @@ export class AuthService {
         profile: {
           id: user.id,
           mobile: user.mobile,
-          realName: user.realName,
+          nickName: user.nickName,
           age: user.age,
           gender: user.gender,
         },

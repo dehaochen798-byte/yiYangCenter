@@ -8,7 +8,7 @@ export interface LoginPayload {
 export interface RegisterPayload {
   mobile: string
   password: string
-  realName: string
+  nickName: string
   age: number
   gender: '男' | '女'
 }

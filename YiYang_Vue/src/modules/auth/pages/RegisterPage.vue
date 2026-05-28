@@ -32,8 +32,8 @@
 
         <el-row :gutter="16">
           <el-col :xs="24" :md="12">
-            <el-form-item label="真实姓名">
-              <el-input v-model="form.realName" placeholder="请输入真实姓名" />
+            <el-form-item label="昵称">
+              <el-input v-model="form.nickName" placeholder="请输入昵称" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :md="6">
@@ -67,7 +67,7 @@ const router = useRouter()
 const form = reactive({
   mobile: '',
   password: '',
-  realName: '',
+  nickName: '',
   age: 60,
   gender: '男',
 })

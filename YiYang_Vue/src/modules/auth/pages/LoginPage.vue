@@ -73,7 +73,7 @@ const form = reactive({
 function handleLogin() {
   authStore.login({
     mobile: form.mobile,
-    realName: '演示用户',
+    nickName: '演示用户',
   })
 
   ElMessage.success('登录成功')
