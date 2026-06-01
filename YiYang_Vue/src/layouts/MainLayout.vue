@@ -486,8 +486,8 @@ function handleLogout() {
 }
 
 :deep(.main-layout__tabs-card .el-tabs__item.is-active) {
-  color: #16362f;
   font-weight: 700;
+  color: #16362f;
   background: linear-gradient(180deg, #fffaf0 0%, #fff 100%);
   box-shadow: 0 10px 24px rgb(64 95 81 / 10%);
 }
