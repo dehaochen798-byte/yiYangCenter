@@ -24,18 +24,22 @@ export class AuthService {
     }
 
     const passwordHash = await hash(dto.password, 10)
+    const realName = dto.realName.trim()
 
     const user = await this.prisma.user.create({
       data: {
         mobile: dto.mobile,
         passwordHash,
-        nickName: dto.nickName,
+        realName,
+        // Keep nickName populated for existing UI paths that still read it.
+        nickName: realName,
         age: dto.age,
         gender: dto.gender,
       },
       select: {
         id: true,
         mobile: true,
+        realName: true,
         nickName: true,
         age: true,
         gender: true,
@@ -79,6 +83,7 @@ export class AuthService {
         profile: {
           id: user.id,
           mobile: user.mobile,
+          realName: user.realName,
           nickName: user.nickName,
           age: user.age,
           gender: user.gender,

@@ -8,7 +8,7 @@ export interface LoginPayload {
 export interface RegisterPayload {
   mobile: string
   password: string
-  nickName: string
+  realName: string
   age: number
   gender: 'MALE' | 'FEMALE'
 }
@@ -16,6 +16,7 @@ export interface RegisterPayload {
 export interface AuthProfile {
   id: number
   mobile: string
+  realName: string
   nickName: string
   age: number
   gender: 'MALE' | 'FEMALE'
@@ -29,6 +30,7 @@ export interface LoginResponse {
 export interface RegisterResponse {
   id: number
   mobile: string
+  realName: string
   nickName: string
   age: number
   gender: 'MALE' | 'FEMALE'

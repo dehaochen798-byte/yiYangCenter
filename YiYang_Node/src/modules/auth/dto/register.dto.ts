@@ -12,7 +12,7 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
-  nickName!: string
+  realName!: string
 
   @IsInt()
   @Min(1)

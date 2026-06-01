@@ -5,7 +5,7 @@
         <div class="register-page__header">
           <div>
             <h1>用户注册</h1>
-            <p>按要求填写手机号、密码、昵称、年龄和性别。</p>
+            <p>按要求填写手机号、密码、真实姓名、年龄和性别。</p>
           </div>
           <el-button link @click="router.push('/auth/login')">返回登录</el-button>
         </div>
@@ -32,8 +32,8 @@
 
         <el-row :gutter="16">
           <el-col :xs="24" :md="12">
-            <el-form-item label="昵称">
-              <el-input v-model="form.nickName" placeholder="请输入昵称" />
+            <el-form-item label="真实姓名">
+              <el-input v-model="form.realName" placeholder="请输入真实姓名" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :md="6">
@@ -71,7 +71,7 @@ const submitting = ref(false)
 const form = reactive({
   mobile: '',
   password: '',
-  nickName: '',
+  realName: '',
   age: 60,
   gender: 'MALE' as 'MALE' | 'FEMALE',
 })
@@ -87,8 +87,8 @@ function validateForm() {
     return false
   }
 
-  if (!form.nickName.trim()) {
-    ElMessage.warning('请输入昵称')
+  if (!form.realName.trim()) {
+    ElMessage.warning('请输入真实姓名')
     return false
   }
 
@@ -106,7 +106,7 @@ async function handleRegister() {
     const response = await registerApi({
       mobile: form.mobile.trim(),
       password: form.password,
-      nickName: form.nickName.trim(),
+      realName: form.realName.trim(),
       age: form.age,
       gender: form.gender,
     })

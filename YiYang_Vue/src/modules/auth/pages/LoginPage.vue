@@ -71,8 +71,8 @@ const authStore = useAuthStore()
 const submitting = ref(false)
 
 const form = reactive({
-  mobile: '13800138000',
-  password: '123456',
+  mobile: '19100001910',
+  password: '1',
 })
 
 watch(
