@@ -38,7 +38,7 @@
           </el-col>
           <el-col :xs="24" :md="6">
             <el-form-item label="年龄">
-              <el-input-number v-model="form.age" :min="18" :max="120" />
+              <el-input-number v-model="form.age" :min="1" :max="120" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :md="6">

@@ -2,13 +2,15 @@ import js from '@eslint/js'
 import eslintConfigPrettier from 'eslint-config-prettier'
 import globals from 'globals'
 import pluginVue from 'eslint-plugin-vue'
+import tseslint from 'typescript-eslint'
 
 export default [
   {
     ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
   },
+  ...tseslint.configs.recommended,
   {
-    files: ['src/**/*.{js,vue}'],
+    files: ['src/**/*.{js,ts,vue}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -21,9 +23,16 @@ export default [
   ...pluginVue.configs['flat/recommended'].map((config) => ({
     ...config,
     files: ['src/**/*.vue'],
+    languageOptions: {
+      ...config.languageOptions,
+      parserOptions: {
+        ...config.languageOptions?.parserOptions,
+        parser: tseslint.parser,
+      },
+    },
   })),
   {
-    files: ['*.config.js', 'vite.config.js'],
+    files: ['*.config.{js,ts}', 'vite.config.{js,ts}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -35,7 +44,7 @@ export default [
   },
   eslintConfigPrettier,
   {
-    files: ['src/**/*.{js,vue}', '*.config.js', 'vite.config.js'],
+    files: ['src/**/*.{js,ts,vue}', '*.config.{js,ts}', 'vite.config.{js,ts}'],
     rules: {
       'vue/multi-word-component-names': 'off',
       'no-console': 'warn',
