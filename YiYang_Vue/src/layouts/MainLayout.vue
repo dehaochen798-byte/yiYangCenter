@@ -1,5 +1,6 @@
 <template>
   <el-container class="main-layout">
+    <!-- 侧边栏 -->
     <el-aside :width="sidebarCollapsed ? '80px' : '260px'" class="main-layout__aside">
       <div class="brand">
         <div class="brand__badge">YY</div>
@@ -9,7 +10,7 @@
         </div>
       </div>
 
-      <el-scrollbar>
+      <el-scrollbar class="main-layout__aside-scroll">
         <el-menu
           :collapse="sidebarCollapsed"
           :default-active="activeMenu"
@@ -41,7 +42,9 @@
       </el-scrollbar>
     </el-aside>
 
-    <el-container>
+    <!-- 右边内容 -->
+    <el-container class="main-layout__body">
+      <!-- 头部导航 -->
       <el-header class="main-layout__header">
         <div class="toolbar">
           <div class="toolbar__left">
@@ -77,33 +80,35 @@
 
       <section class="main-layout__tabs">
         <div class="main-layout__tabs-bar">
-          <el-tabs
-            v-model="activeTabName"
-            type="card"
-            class="main-layout__tabs-card"
-            @tab-click="handleTabClick"
+          <div
+            ref="tabsScrollRef"
+            class="main-layout__tabs-scroll"
+            @wheel.prevent="handleTabsWheel"
           >
-            <el-tab-pane
-              v-for="tab in visitedTabs"
-              :key="tab.path"
-              :name="tab.path"
+            <el-tabs
+              v-model="activeTabName"
+              type="card"
+              class="main-layout__tabs-card"
+              @tab-click="handleTabClick"
             >
-              <template #label>
-                <span class="main-layout__tab-label">
-                  <span class="main-layout__tab-text">{{ tab.title }}</span>
-                  <button
-                    v-if="tab.path !== dashboardTab.path"
-                    type="button"
-                    class="main-layout__tab-close"
-                    aria-label="关闭标签"
-                    @click.stop="handleTabCloseClick(tab.path)"
-                  >
-                    ×
-                  </button>
-                </span>
-              </template>
-            </el-tab-pane>
-          </el-tabs>
+              <el-tab-pane v-for="tab in visitedTabs" :key="tab.path" :name="tab.path">
+                <template #label>
+                  <span class="main-layout__tab-label">
+                    <span class="main-layout__tab-text">{{ tab.title }}</span>
+                    <button
+                      v-if="tab.path !== dashboardTab.path"
+                      type="button"
+                      class="main-layout__tab-close"
+                      aria-label="关闭标签"
+                      @click.stop="handleTabCloseClick(tab.path)"
+                    >
+                      ×
+                    </button>
+                  </span>
+                </template>
+              </el-tab-pane>
+            </el-tabs>
+          </div>
 
           <el-button
             text
@@ -116,8 +121,11 @@
         </div>
       </section>
 
+      <!-- 内容容器 -->
       <el-main class="main-layout__main">
-        <router-view />
+        <el-scrollbar class="main-layout__main-scroll">
+          <router-view />
+        </el-scrollbar>
       </el-main>
     </el-container>
   </el-container>
@@ -127,7 +135,7 @@
 import { HomeFilled, House, Management, Memo } from '@element-plus/icons-vue'
 import type { TabsPaneContext } from 'element-plus'
 import { storeToRefs } from 'pinia'
-import { computed, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../modules/auth/store/auth.store'
 import { useAppStore } from '../stores/app.store'
@@ -148,6 +156,7 @@ const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
+const tabsScrollRef = ref<HTMLDivElement | null>(null)
 const { sidebarCollapsed, visitedTabs, activeTabPath } = storeToRefs(appStore)
 
 const dashboardTab = {
@@ -226,6 +235,8 @@ function syncTabWithRoute() {
     path,
     title,
   })
+
+  scrollActiveTabIntoView(path)
 }
 
 function resolveTabTitle(path: string) {
@@ -240,6 +251,7 @@ function handleTabClick(tab: TabsPaneContext) {
   const path = String(tab.paneName || '')
 
   if (path) {
+    appStore.setActiveTab(path)
     router.push(path)
   }
 }
@@ -256,6 +268,45 @@ function closeTab(path: string) {
 
 function handleTabCloseClick(path: string) {
   closeTab(path)
+}
+
+function handleTabsWheel(event: WheelEvent) {
+  const container = tabsScrollRef.value
+
+  if (!container) {
+    return
+  }
+
+  container.scrollLeft += event.deltaY || event.deltaX
+}
+
+function scrollActiveTabIntoView(path: string) {
+  nextTick(() => {
+    const container = tabsScrollRef.value
+
+    if (!container) {
+      return
+    }
+
+    const activeTab = container.querySelector<HTMLElement>(
+      `.el-tabs__item[id="tab-${path}"]`
+    )
+
+    if (!activeTab) {
+      return
+    }
+
+    const containerRect = container.getBoundingClientRect()
+    const tabRect = activeTab.getBoundingClientRect()
+    const overflowLeft = tabRect.left < containerRect.left
+    const overflowRight = tabRect.right > containerRect.right
+
+    if (overflowLeft) {
+      container.scrollLeft -= containerRect.left - tabRect.left + 12
+    } else if (overflowRight) {
+      container.scrollLeft += tabRect.right - containerRect.right + 12
+    }
+  })
 }
 
 function handleClearTabs() {
@@ -277,16 +328,31 @@ function handleLogout() {
 
 <style scoped lang="scss">
 .main-layout {
+  height: 100vh;
   min-height: 100vh;
+  overflow: hidden;
   background:
     radial-gradient(circle at top left, rgb(226 239 229 / 95%), transparent 28%),
     linear-gradient(180deg, #f5f8f6 0%, #edf3ef 100%);
 
   &__aside {
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
     background: linear-gradient(180deg, #173a33 0%, #20483f 100%);
     border-right: 1px solid rgb(59 93 73 / 8%);
     transition: width 0.2s ease;
+  }
+
+  &__aside-scroll {
+    flex: 1;
+    min-height: 0;
+  }
+
+  &__body {
+    min-width: 0;
+    height: 100vh;
+    overflow: hidden;
   }
 
   &__menu {
@@ -336,9 +402,16 @@ function handleLogout() {
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 62%);
   }
 
-  &__tabs-card {
+  &__tabs-scroll {
     flex: 1;
     min-width: 0;
+    overflow: auto hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  &__tabs-card {
+    min-width: max-content;
   }
 
   &__tabs-clear {
@@ -348,12 +421,28 @@ function handleLogout() {
   }
 
   &__main {
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  &__main-scroll {
+    height: 100%;
     padding: 24px;
   }
 }
 
+.main-layout__tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 :deep(.main-layout__tabs-card .el-tabs__header) {
   margin: 0;
+  border-bottom: none;
+}
+
+:deep(.main-layout__tabs-card.el-tabs--card > .el-tabs__header) {
   border-bottom: none;
 }
 
@@ -367,13 +456,17 @@ function handleLogout() {
   border: none;
 }
 
+:deep(.main-layout__tabs-card.el-tabs--card > .el-tabs__header .el-tabs__nav) {
+  border: none;
+  border-radius: 0;
+}
+
 :deep(.main-layout__tabs-card .el-tabs__item) {
   height: 38px;
   padding: 0 18px;
   margin-right: 8px;
-  color: #4b685f;
-  background: linear-gradient(180deg, #f8fbf9 0%, #edf4f0 100%);
-  border: 1px solid rgb(117 146 133 / 22%);
+  color: #628176;
+  background: linear-gradient(180deg, #eef4f1 0%, #e5ede8 100%);
   transition:
     color 0.18s ease,
     background 0.18s ease,
@@ -381,16 +474,21 @@ function handleLogout() {
     box-shadow 0.18s ease;
 }
 
+:deep(.main-layout__tabs-card.el-tabs--card > .el-tabs__header .el-tabs__item) {
+  margin-top: 0;
+  border: none;
+}
+
 :deep(.main-layout__tabs-card .el-tabs__item:hover) {
   color: #173a33;
-  border-color: rgb(117 146 133 / 38%);
+  background: linear-gradient(180deg, #f7fbf8 0%, #edf4f0 100%);
   box-shadow: 0 6px 16px rgb(64 95 81 / 8%);
 }
 
 :deep(.main-layout__tabs-card .el-tabs__item.is-active) {
-  color: #173a33;
-  background: linear-gradient(180deg, #fffdf4 0%, #fff 100%);
-  border-color: rgb(117 146 133 / 44%);
+  color: #16362f;
+  font-weight: 700;
+  background: linear-gradient(180deg, #fffaf0 0%, #fff 100%);
   box-shadow: 0 10px 24px rgb(64 95 81 / 10%);
 }
 
@@ -420,7 +518,7 @@ function handleLogout() {
   padding: 0;
   font-size: 14px;
   line-height: 1;
-  color: #86a094;
+  color: #93a89f;
   cursor: pointer;
   background: transparent;
   border: none;
@@ -432,7 +530,7 @@ function handleLogout() {
 }
 
 :deep(.main-layout__tabs-card .el-tabs__item:hover) .main-layout__tab-close {
-  color: #35594e;
+  color: #45675a;
 }
 
 :deep(.main-layout__tabs-card .el-tabs__item.is-active) .main-layout__tab-close {
@@ -540,6 +638,10 @@ function handleLogout() {
     }
 
     &__main {
+      padding: 0;
+    }
+
+    &__main-scroll {
       padding: 16px;
     }
   }
