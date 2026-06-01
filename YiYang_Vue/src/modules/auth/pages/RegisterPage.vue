@@ -11,7 +11,7 @@
         </div>
       </template>
 
-      <el-form label-position="top" :model="form">
+      <el-form label-position="top" :model="form" @submit.prevent="handleRegister">
         <el-row :gutter="16">
           <el-col :xs="24" :md="12">
             <el-form-item label="手机号码">
@@ -51,7 +51,9 @@
           </el-col>
         </el-row>
 
-        <el-button type="primary" @click="handleRegister">完成注册</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleRegister">
+          完成注册
+        </el-button>
       </el-form>
     </el-card>
   </div>
@@ -59,10 +61,12 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { registerApi } from '../api/auth.api'
 
 const router = useRouter()
+const submitting = ref(false)
 
 const form = reactive({
   mobile: '',
@@ -72,9 +76,54 @@ const form = reactive({
   gender: 'MALE' as 'MALE' | 'FEMALE',
 })
 
-function handleRegister() {
-  ElMessage.success('注册表单骨架已就绪，可继续接后端接口')
-  router.push('/auth/login')
+function validateForm() {
+  if (!form.mobile.trim()) {
+    ElMessage.warning('请输入手机号码')
+    return false
+  }
+
+  if (!form.password.trim()) {
+    ElMessage.warning('请输入登录密码')
+    return false
+  }
+
+  if (!form.nickName.trim()) {
+    ElMessage.warning('请输入昵称')
+    return false
+  }
+
+  return true
+}
+
+async function handleRegister() {
+  if (submitting.value || !validateForm()) {
+    return
+  }
+
+  submitting.value = true
+
+  try {
+    const response = await registerApi({
+      mobile: form.mobile.trim(),
+      password: form.password,
+      nickName: form.nickName.trim(),
+      age: form.age,
+      gender: form.gender,
+    })
+
+    ElMessage.success(response.message || '注册成功')
+    router.push({
+      path: '/auth/login',
+      query: {
+        mobile: form.mobile.trim(),
+      },
+    })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '注册失败'
+    ElMessage.error(message)
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 

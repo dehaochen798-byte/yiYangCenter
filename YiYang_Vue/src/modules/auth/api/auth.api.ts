@@ -13,17 +13,38 @@ export interface RegisterPayload {
   gender: 'MALE' | 'FEMALE'
 }
 
+export interface AuthProfile {
+  id: number
+  mobile: string
+  nickName: string
+  age: number
+  gender: 'MALE' | 'FEMALE'
+}
+
+export interface LoginResponse {
+  token: string
+  profile: AuthProfile
+}
+
+export interface RegisterResponse {
+  id: number
+  mobile: string
+  nickName: string
+  age: number
+  gender: 'MALE' | 'FEMALE'
+}
+
 export function loginApi(data: LoginPayload) {
-  return request({
-    url: '/auth/login',
+  return request<LoginResponse>({
+    url: '/api/auth/login',
     method: 'post',
     data,
   })
 }
 
 export function registerApi(data: RegisterPayload) {
-  return request({
-    url: '/auth/register',
+  return request<RegisterResponse>({
+    url: '/api/auth/register',
     method: 'post',
     data,
   })

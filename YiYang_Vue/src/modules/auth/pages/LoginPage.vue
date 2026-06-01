@@ -6,14 +6,14 @@
       round
       @click="router.push('/auth/js-lab')"
     >
-      进入测试页
+      进入练习页
     </el-button>
 
     <section class="auth-page__intro">
       <p class="auth-page__eyebrow">YiYang Center</p>
-      <h1>东软颐养中心管理后台</h1>
+      <h1>颐养中心管理后台</h1>
       <el-space wrap>
-        <el-tag>注册</el-tag>
+        <el-tag>登录注册</el-tag>
         <el-tag>客户管理</el-tag>
         <el-tag>护理模块</el-tag>
       </el-space>
@@ -30,7 +30,7 @@
         </div>
       </template>
 
-      <el-form label-position="top" :model="form">
+      <el-form label-position="top" :model="form" @submit.prevent="handleLogin">
         <el-form-item label="手机号码">
           <el-input v-model="form.mobile" placeholder="请输入手机号码" />
         </el-form-item>
@@ -41,10 +41,16 @@
             type="password"
             show-password
             placeholder="请输入登录密码"
+            @keyup.enter="handleLogin"
           />
         </el-form-item>
 
-        <el-button type="primary" class="auth-page__submit" @click="handleLogin">
+        <el-button
+          type="primary"
+          class="auth-page__submit"
+          :loading="submitting"
+          @click="handleLogin"
+        >
           登录
         </el-button>
       </el-form>
@@ -52,29 +58,77 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { reactive } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { loginApi } from '../api/auth.api'
 import { useAuthStore } from '../store/auth.store'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const submitting = ref(false)
 
 const form = reactive({
   mobile: '13800138000',
   password: '123456',
 })
 
-function handleLogin() {
-  authStore.login({
-    mobile: form.mobile,
-    nickName: '演示用户',
-  })
+watch(
+  () => route.query.mobile,
+  (mobile) => {
+    if (typeof mobile === 'string' && mobile.trim()) {
+      form.mobile = mobile.trim()
+      form.password = ''
+    }
+  },
+  {
+    immediate: true,
+  }
+)
 
-  ElMessage.success('登录成功')
-  router.push(route.query.redirect || '/dashboard')
+function getRedirectPath() {
+  const redirect = route.query.redirect
+  return typeof redirect === 'string' ? redirect : '/dashboard'
+}
+
+function validateForm() {
+  if (!form.mobile.trim()) {
+    ElMessage.warning('请输入手机号码')
+    return false
+  }
+
+  if (!form.password.trim()) {
+    ElMessage.warning('请输入登录密码')
+    return false
+  }
+
+  return true
+}
+
+async function handleLogin() {
+  if (submitting.value || !validateForm()) {
+    return
+  }
+
+  submitting.value = true
+
+  try {
+    const response = await loginApi({
+      mobile: form.mobile.trim(),
+      password: form.password,
+    })
+
+    authStore.setAuth(response.data)
+    ElMessage.success(response.message || '登录成功')
+    router.push(getRedirectPath())
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '登录失败'
+    ElMessage.error(message)
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 
