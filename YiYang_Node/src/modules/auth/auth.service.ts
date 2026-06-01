@@ -5,6 +5,9 @@ import { PrismaService } from '../../prisma/prisma.service.js'
 import { LoginDto } from './dto/login.dto.js'
 import { RegisterDto } from './dto/register.dto.js'
 
+const DEFAULT_INITIAL_PASSWORD = '123456'
+const LEGACY_TEMP_PASSWORD_HASH = 'TEMP_PASSWORD_HASH'
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -31,7 +34,6 @@ export class AuthService {
         mobile: dto.mobile,
         passwordHash,
         realName,
-        // Keep nickName populated for existing UI paths that still read it.
         nickName: realName,
         age: dto.age,
         gender: dto.gender,
@@ -64,7 +66,24 @@ export class AuthService {
       throw new UnauthorizedException('手机号或密码错误')
     }
 
-    const matched = await compare(dto.password, user.passwordHash)
+    let matched = false
+
+    if (user.passwordHash === LEGACY_TEMP_PASSWORD_HASH) {
+      matched = dto.password === DEFAULT_INITIAL_PASSWORD
+
+      if (matched) {
+        await this.prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            passwordHash: await hash(DEFAULT_INITIAL_PASSWORD, 10),
+          },
+        })
+      }
+    } else {
+      matched = await compare(dto.password, user.passwordHash).catch(() => false)
+    }
 
     if (!matched) {
       throw new UnauthorizedException('手机号或密码错误')
