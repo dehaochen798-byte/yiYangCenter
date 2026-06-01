@@ -4,7 +4,7 @@
       <div class="brand">
         <div class="brand__badge">YY</div>
         <div v-if="!sidebarCollapsed" class="brand__content">
-          <strong>东软颐养中心</strong>
+          <strong>颐养中心</strong>
           <span>养老中心管理系统</span>
         </div>
       </div>
@@ -58,7 +58,11 @@
             <el-tag type="success" effect="light">已登录</el-tag>
             <el-dropdown>
               <span class="toolbar__user">
-                {{ authStore.profile?.nickName || '系统管理员' }}
+                {{
+                  authStore.profile?.realName ||
+                  authStore.profile?.nickName ||
+                  '系统管理员'
+                }}
                 <el-icon><Management /></el-icon>
               </span>
               <template #dropdown>
@@ -71,6 +75,47 @@
         </div>
       </el-header>
 
+      <section class="main-layout__tabs">
+        <div class="main-layout__tabs-bar">
+          <el-tabs
+            v-model="activeTabName"
+            type="card"
+            class="main-layout__tabs-card"
+            @tab-click="handleTabClick"
+          >
+            <el-tab-pane
+              v-for="tab in visitedTabs"
+              :key="tab.path"
+              :name="tab.path"
+            >
+              <template #label>
+                <span class="main-layout__tab-label">
+                  <span class="main-layout__tab-text">{{ tab.title }}</span>
+                  <button
+                    v-if="tab.path !== dashboardTab.path"
+                    type="button"
+                    class="main-layout__tab-close"
+                    aria-label="关闭标签"
+                    @click.stop="handleTabCloseClick(tab.path)"
+                  >
+                    ×
+                  </button>
+                </span>
+              </template>
+            </el-tab-pane>
+          </el-tabs>
+
+          <el-button
+            text
+            class="main-layout__tabs-clear"
+            :disabled="visitedTabs.length === 0"
+            @click="handleClearTabs"
+          >
+            一键清空
+          </el-button>
+        </div>
+      </section>
+
       <el-main class="main-layout__main">
         <router-view />
       </el-main>
@@ -78,21 +123,39 @@
   </el-container>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { HomeFilled, House, Management, Memo } from '@element-plus/icons-vue'
+import type { TabsPaneContext } from 'element-plus'
 import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../modules/auth/store/auth.store'
 import { useAppStore } from '../stores/app.store'
+
+type MenuItem = {
+  index: string
+  title: string
+}
+
+type MenuGroup = {
+  index: string
+  title: string
+  icon: typeof HomeFilled
+  items: MenuItem[]
+}
 
 const route = useRoute()
 const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
-const { sidebarCollapsed } = storeToRefs(appStore)
+const { sidebarCollapsed, visitedTabs, activeTabPath } = storeToRefs(appStore)
 
-const menuGroups = [
+const dashboardTab = {
+  path: '/dashboard',
+  title: '系统首页',
+}
+
+const menuGroups: MenuGroup[] = [
   {
     index: 'dashboard',
     title: '工作台',
@@ -127,11 +190,78 @@ const menuGroups = [
   },
 ]
 
-const activeMenu = computed(() => route.meta.menuKey || route.path)
-const pageTitle = computed(() => route.meta.title || '东软颐养中心')
+const menuItemMap = new Map(
+  menuGroups.flatMap((group) => group.items.map((item) => [item.index, item.title]))
+)
 
-function handleMenuSelect(index) {
+const activeMenu = computed(() => (route.meta.menuKey as string) || route.path)
+const activeTabName = computed({
+  get: () => activeTabPath.value,
+  set: (value: string) => {
+    appStore.setActiveTab(value)
+  },
+})
+const pageTitle = computed(() => (route.meta.title as string) || '颐养中心')
+
+watch(
+  () => route.fullPath,
+  () => {
+    syncTabWithRoute()
+  },
+  {
+    immediate: true,
+  }
+)
+
+function syncTabWithRoute() {
+  const path = route.path
+  const requiresAuth = route.matched.some((record) => record.meta.requiresAuth)
+
+  if (!requiresAuth) {
+    return
+  }
+
+  const title = resolveTabTitle(path)
+  appStore.addVisitedTab({
+    path,
+    title,
+  })
+}
+
+function resolveTabTitle(path: string) {
+  return menuItemMap.get(path) || (route.meta.title as string) || path
+}
+
+function handleMenuSelect(index: string) {
   router.push(index)
+}
+
+function handleTabClick(tab: TabsPaneContext) {
+  const path = String(tab.paneName || '')
+
+  if (path) {
+    router.push(path)
+  }
+}
+
+function closeTab(path: string) {
+  const isCurrentTab = route.path === path
+
+  appStore.removeVisitedTab(path)
+
+  if (isCurrentTab) {
+    router.push(activeTabPath.value)
+  }
+}
+
+function handleTabCloseClick(path: string) {
+  closeTab(path)
+}
+
+function handleClearTabs() {
+  appStore.clearVisitedTabs()
+  appStore.addVisitedTab(dashboardTab)
+  router.push(dashboardTab.path)
 }
 
 function toggleSidebar() {
@@ -140,6 +270,7 @@ function toggleSidebar() {
 
 function handleLogout() {
   authStore.logout()
+  appStore.clearVisitedTabs()
   router.push('/auth/login')
 }
 </script>
@@ -147,7 +278,9 @@ function handleLogout() {
 <style scoped lang="scss">
 .main-layout {
   min-height: 100vh;
-  background: #f5f8f6;
+  background:
+    radial-gradient(circle at top left, rgb(226 239 229 / 95%), transparent 28%),
+    linear-gradient(180deg, #f5f8f6 0%, #edf3ef 100%);
 
   &__aside {
     overflow: hidden;
@@ -182,15 +315,134 @@ function handleLogout() {
     display: flex;
     align-items: center;
     height: auto;
-    padding: 20px 24px;
+    padding: 20px 24px 16px;
     background: rgb(255 255 255 / 88%);
     border-bottom: 1px solid rgb(59 93 73 / 8%);
     backdrop-filter: blur(14px);
   }
 
+  &__tabs {
+    padding: 0 0 8px;
+  }
+
+  &__tabs-bar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    background: rgb(255 255 255 / 76%);
+    border-bottom: 1px solid rgb(59 93 73 / 8%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 62%);
+  }
+
+  &__tabs-card {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__tabs-clear {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: #476d60;
+  }
+
   &__main {
     padding: 24px;
   }
+}
+
+:deep(.main-layout__tabs-card .el-tabs__header) {
+  margin: 0;
+  border-bottom: none;
+}
+
+:deep(.main-layout__tabs-card .el-tabs__nav-wrap) {
+  padding-bottom: 0;
+}
+
+:deep(.main-layout__tabs-card .el-tabs__nav) {
+  gap: 8px;
+  background: transparent;
+  border: none;
+}
+
+:deep(.main-layout__tabs-card .el-tabs__item) {
+  height: 38px;
+  padding: 0 18px;
+  margin-right: 8px;
+  color: #4b685f;
+  background: linear-gradient(180deg, #f8fbf9 0%, #edf4f0 100%);
+  border: 1px solid rgb(117 146 133 / 22%);
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+:deep(.main-layout__tabs-card .el-tabs__item:hover) {
+  color: #173a33;
+  border-color: rgb(117 146 133 / 38%);
+  box-shadow: 0 6px 16px rgb(64 95 81 / 8%);
+}
+
+:deep(.main-layout__tabs-card .el-tabs__item.is-active) {
+  color: #173a33;
+  background: linear-gradient(180deg, #fffdf4 0%, #fff 100%);
+  border-color: rgb(117 146 133 / 44%);
+  box-shadow: 0 10px 24px rgb(64 95 81 / 10%);
+}
+
+:deep(.main-layout__tabs-card .el-tabs__content) {
+  display: none;
+}
+
+.main-layout__tab-label {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.main-layout__tab-text {
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.main-layout__tab-close {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  color: #86a094;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+:deep(.main-layout__tabs-card .el-tabs__item:hover) .main-layout__tab-close {
+  color: #35594e;
+}
+
+:deep(.main-layout__tabs-card .el-tabs__item.is-active) .main-layout__tab-close {
+  color: #173a33;
+}
+
+.main-layout__tab-close:hover {
+  color: #173a33;
+  background: rgb(64 95 81 / 12%);
+  box-shadow: 0 0 0 1px rgb(64 95 81 / 8%);
 }
 
 .brand {
@@ -275,6 +527,16 @@ function handleLogout() {
 
     &__header {
       padding: 16px;
+    }
+
+    &__tabs {
+      padding: 0 16px 8px;
+    }
+
+    &__tabs-bar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 12px 12px 0;
     }
 
     &__main {
