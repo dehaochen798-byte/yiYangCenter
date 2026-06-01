@@ -10,7 +10,7 @@ export interface RegisterPayload {
   password: string
   nickName: string
   age: number
-  gender: '男' | '女'
+  gender: 'MALE' | 'FEMALE'
 }
 
 export function loginApi(data: LoginPayload) {

@@ -5,7 +5,7 @@
         <div class="register-page__header">
           <div>
             <h1>用户注册</h1>
-            <p>按需求收集手机号码、密码、真实姓名、年龄和性别。</p>
+            <p>按要求填写手机号、密码、昵称、年龄和性别。</p>
           </div>
           <el-button link @click="router.push('/auth/login')">返回登录</el-button>
         </div>
@@ -44,8 +44,8 @@
           <el-col :xs="24" :md="6">
             <el-form-item label="性别">
               <el-select v-model="form.gender" placeholder="请选择">
-                <el-option label="男" value="男" />
-                <el-option label="女" value="女" />
+                <el-option label="男" value="MALE" />
+                <el-option label="女" value="FEMALE" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -57,7 +57,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -69,7 +69,7 @@ const form = reactive({
   password: '',
   nickName: '',
   age: 60,
-  gender: '男',
+  gender: 'MALE' as 'MALE' | 'FEMALE',
 })
 
 function handleRegister() {

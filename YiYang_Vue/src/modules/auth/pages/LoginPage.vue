@@ -12,9 +12,6 @@
     <section class="auth-page__intro">
       <p class="auth-page__eyebrow">YiYang Center</p>
       <h1>东软颐养中心管理后台</h1>
-      <p>
-        当前已接入 Vue Router、Pinia、Element Plus、SCSS 及基础规范配置，适合作为正式项目起步模板。
-      </p>
       <el-space wrap>
         <el-tag>注册</el-tag>
         <el-tag>客户管理</el-tag>

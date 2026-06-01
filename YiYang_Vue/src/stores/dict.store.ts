@@ -8,8 +8,8 @@ export interface DictOption {
 
 export const useDictStore = defineStore('dict', () => {
   const genders = ref<DictOption[]>([
-    { label: '男', value: '男' },
-    { label: '女', value: '女' },
+    { label: '男', value: 'MALE' },
+    { label: '女', value: 'FEMALE' },
   ])
 
   return {
