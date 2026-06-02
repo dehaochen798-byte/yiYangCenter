@@ -359,3 +359,21 @@ login(@Body() dto: LoginDto) {
 
 同目录已有写法 > 本文档 > 通用习惯
 
+## 8. 终端乱码排查
+
+如果在 Windows PowerShell 里查看 `.vue`、`.ts`、`.md` 文件出现中文乱码，先统一切到 UTF-8 再读文件。
+
+建议命令：
+
+```powershell
+chcp 65001
+[Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+$OutputEncoding = [Console]::OutputEncoding
+Get-Content -Encoding UTF8 your-file.vue
+```
+
+补充约定：
+
+- 项目文件默认按 `UTF-8` 处理。
+- 读源码时优先显式带上 `-Encoding UTF8`。
+- 如果命令行输出仍异常，先执行上面的编码初始化，再继续排查文件本身是否被错误保存成了其他编码。

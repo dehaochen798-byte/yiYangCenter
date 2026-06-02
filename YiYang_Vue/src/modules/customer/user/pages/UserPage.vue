@@ -5,11 +5,15 @@
     description="统一维护员工账号和养老客户档案。客户档案是入住、膳食、护理记录的基础主数据，员工账号则用于健康管家和护理执行人的绑定。"
     table-title="当前档案列表"
     table-description="左侧支持切换员工账号和客户档案两类主数据。"
-    form-title="信息维护"
-    form-description="编辑完成后会立即影响其他业务模块的下拉选择和关联显示。"
+    :full-width="true"
   >
     <template #table-actions>
-      <el-segmented v-model="activeTab" :options="tabOptions" />
+      <div class="table-toolbar">
+        <el-segmented v-model="activeTab" :options="tabOptions" @change="handleTabChange" />
+        <el-button type="primary" @click="openCreateDialog">
+          新建{{ activeTab === 'resident' ? '客户档案' : '员工账号' }}
+        </el-button>
+      </div>
     </template>
 
     <template #table>
@@ -80,130 +84,144 @@
       </el-table>
     </template>
 
-    <template #form-actions>
-      <el-button text @click="resetCurrentForm">重置</el-button>
-    </template>
+  </CrudPageShell>
 
-    <template #form>
-      <el-form
-        v-if="activeTab === 'resident'"
-        label-position="top"
-        :model="residentForm"
-        @submit.prevent
-      >
-        <el-form-item label="客户姓名">
-          <el-input v-model="residentForm.fullName" placeholder="请输入客户姓名" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="手机号">
-              <el-input v-model="residentForm.phone" placeholder="请输入手机号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="身份证号">
-              <el-input v-model="residentForm.idCard" placeholder="可选" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="年龄">
-              <el-input-number v-model="residentForm.age" :min="1" :max="120" class="full-width" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="性别">
-              <el-select v-model="residentForm.gender" class="full-width">
-                <el-option label="男" value="MALE" />
-                <el-option label="女" value="FEMALE" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="紧急联系人">
-              <el-input v-model="residentForm.emergencyContactName" placeholder="可选" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="联系人电话">
-              <el-input v-model="residentForm.emergencyContactPhone" placeholder="可选" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="默认护理级别">
-          <el-select v-model="residentForm.careLevelId" clearable class="full-width">
-            <el-option
-              v-for="item in careLevels"
-              :key="item.id"
-              :label="`${item.code} / ${item.name}`"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="residentForm.note" type="textarea" :rows="4" placeholder="可记录病史、偏好等信息" />
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitResident">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="dialogTitle"
+    width="680px"
+    destroy-on-close
+    @closed="resetCurrentForm"
+  >
+    <el-form
+      v-if="activeTab === 'resident'"
+      label-position="top"
+      :model="residentForm"
+      @submit.prevent
+    >
+      <el-form-item label="客户姓名">
+        <el-input v-model="residentForm.fullName" placeholder="请输入客户姓名" />
+      </el-form-item>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="手机号">
+            <el-input v-model="residentForm.phone" placeholder="请输入手机号" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="身份证号">
+            <el-input v-model="residentForm.idCard" placeholder="可选" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="年龄">
+            <el-input-number v-model="residentForm.age" :min="1" :max="120" class="full-width" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="性别">
+            <el-select v-model="residentForm.gender" class="full-width">
+              <el-option label="男" value="MALE" />
+              <el-option label="女" value="FEMALE" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="紧急联系人">
+            <el-input v-model="residentForm.emergencyContactName" placeholder="可选" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="联系人电话">
+            <el-input v-model="residentForm.emergencyContactPhone" placeholder="可选" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item label="默认护理级别">
+        <el-select v-model="residentForm.careLevelId" clearable class="full-width">
+          <el-option
+            v-for="item in careLevels"
+            :key="item.id"
+            :label="`${item.code} / ${item.name}`"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="备注">
+        <el-input v-model="residentForm.note" type="textarea" :rows="4" placeholder="可记录病史、偏好等信息" />
+      </el-form-item>
+    </el-form>
+
+    <el-form v-else label-position="top" :model="userForm" @submit.prevent>
+      <el-form-item label="姓名">
+        <el-input v-model="userForm.realName" placeholder="请输入员工姓名" />
+      </el-form-item>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="手机号">
+            <el-input v-model="userForm.mobile" placeholder="请输入手机号" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="年龄">
+            <el-input-number v-model="userForm.age" :min="18" :max="80" class="full-width" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="性别">
+            <el-select v-model="userForm.gender" class="full-width">
+              <el-option label="男" value="MALE" />
+              <el-option label="女" value="FEMALE" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="状态">
+            <el-select v-model="userForm.status" class="full-width">
+              <el-option label="启用" value="ACTIVE" />
+              <el-option label="停用" value="DISABLED" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="岗位">
+            <el-input v-model="userForm.roleName" placeholder="例如 护理员 / 健康管家" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="部门">
+            <el-input v-model="userForm.departmentName" placeholder="例如 护理部" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-alert
+        title="新增员工账号默认写入临时密码占位，当前项目重点是业务闭环，后续可接重置密码流程。"
+        type="info"
+        :closable="false"
+        show-icon
+      />
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button v-if="activeTab === 'resident'" type="primary" @click="submitResident">
           {{ residentForm.id ? '更新客户档案' : '新建客户档案' }}
         </el-button>
-      </el-form>
-
-      <el-form v-else label-position="top" :model="userForm" @submit.prevent>
-        <el-form-item label="姓名">
-          <el-input v-model="userForm.realName" placeholder="请输入员工姓名" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="手机号">
-              <el-input v-model="userForm.mobile" placeholder="请输入手机号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="年龄">
-              <el-input-number v-model="userForm.age" :min="18" :max="80" class="full-width" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="性别">
-              <el-select v-model="userForm.gender" class="full-width">
-                <el-option label="男" value="MALE" />
-                <el-option label="女" value="FEMALE" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="状态">
-              <el-select v-model="userForm.status" class="full-width">
-                <el-option label="启用" value="ACTIVE" />
-                <el-option label="停用" value="DISABLED" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="岗位">
-              <el-input v-model="userForm.roleName" placeholder="例如 护理员 / 健康管家" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="部门">
-              <el-input v-model="userForm.departmentName" placeholder="例如 护理部" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-alert title="新增员工账号默认写入临时密码占位，当前项目重点是业务闭环，后续可接重置密码流程。" type="info" :closable="false" show-icon />
-        <el-button type="primary" class="full-width submit-button" @click="submitUser">
+        <el-button v-else type="primary" @click="submitUser">
           {{ userForm.id ? '更新员工账号' : '新建员工账号' }}
         </el-button>
-      </el-form>
+      </div>
     </template>
-  </CrudPageShell>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -268,16 +286,25 @@ const activeTab = ref<'resident' | 'user'>('resident')
 const residents = ref<ResidentItem[]>([])
 const users = ref<UserItem[]>([])
 const careLevels = ref<CareLevelItem[]>([])
+const dialogVisible = ref(false)
 const residentForm = reactive<ResidentForm>(createResidentForm())
 const userForm = reactive<UserForm>(createUserForm())
+const dialogTitle = computed(() => {
+  if (activeTab.value === 'resident') {
+    return residentForm.id ? '编辑客户档案' : '新建客户档案'
+  }
+
+  return userForm.id ? '编辑员工账号' : '新建员工账号'
+})
 
 onMounted(() => {
   loadData()
 })
 
-watch(activeTab, () => {
+function handleTabChange() {
+  closeDialog()
   resetCurrentForm()
-})
+}
 
 async function loadData() {
   const [residentRes, userRes, levelRes] = await Promise.all([
@@ -328,6 +355,15 @@ function resetCurrentForm() {
   Object.assign(userForm, createUserForm())
 }
 
+function openCreateDialog() {
+  resetCurrentForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
+
 function startEditResident(row: ResidentItem) {
   activeTab.value = 'resident'
   Object.assign(residentForm, {
@@ -342,6 +378,7 @@ function startEditResident(row: ResidentItem) {
     careLevelId: row.careLevelId || null,
     note: row.note || '',
   })
+  dialogVisible.value = true
 }
 
 function startEditUser(row: UserItem) {
@@ -356,6 +393,7 @@ function startEditUser(row: UserItem) {
     roleName: row.roleName || '',
     departmentName: row.departmentName || '',
   })
+  dialogVisible.value = true
 }
 
 async function submitResident() {
@@ -379,6 +417,7 @@ async function submitResident() {
     ElMessage.success('客户档案创建成功')
   }
 
+  closeDialog()
   resetCurrentForm()
   await loadData()
 }
@@ -402,6 +441,7 @@ async function submitUser() {
     ElMessage.success('员工账号创建成功')
   }
 
+  closeDialog()
   resetCurrentForm()
   await loadData()
 }
@@ -412,7 +452,33 @@ async function submitUser() {
   width: 100%;
 }
 
-.submit-button {
-  margin-top: 16px;
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.page-hint {
+  display: grid;
+  gap: 16px;
+
+  &__text {
+    margin: 0;
+    line-height: 1.7;
+    color: var(--yy-color-text-secondary);
+  }
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .table-toolbar {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>

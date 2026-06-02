@@ -12,7 +12,7 @@
     </el-card>
 
     <el-row :gutter="18" class="crud-page-shell__content">
-      <el-col :xs="24" :xl="16">
+      <el-col :xs="24" :xl="fullWidth ? 24 : 16">
         <el-card shadow="never" class="crud-page-shell__card">
           <template #header>
             <div class="crud-page-shell__section-header">
@@ -28,7 +28,7 @@
         </el-card>
       </el-col>
 
-      <el-col :xs="24" :xl="8">
+      <el-col v-if="!fullWidth" :xs="24" :xl="8">
         <el-card shadow="never" class="crud-page-shell__card">
           <template #header>
             <div class="crud-page-shell__section-header">
@@ -54,8 +54,9 @@ defineProps<{
   description: string
   tableTitle: string
   tableDescription: string
-  formTitle: string
-  formDescription: string
+  formTitle?: string
+  formDescription?: string
+  fullWidth?: boolean
 }>()
 </script>
 
