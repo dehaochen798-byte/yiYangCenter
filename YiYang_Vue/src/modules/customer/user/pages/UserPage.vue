@@ -458,17 +458,6 @@ async function submitUser() {
   align-items: center;
 }
 
-.page-hint {
-  display: grid;
-  gap: 16px;
-
-  &__text {
-    margin: 0;
-    line-height: 1.7;
-    color: var(--yy-color-text-secondary);
-  }
-}
-
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
