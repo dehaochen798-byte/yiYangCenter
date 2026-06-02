@@ -5,9 +5,14 @@
     description="为待入住客户分配床位，登记入住时间和备注。提交后客户状态会改为在住，床位自动变为占床。"
     table-title="入住记录"
     table-description="仅可选择当前未分配床位的客户与空床，避免重复入住。"
-    form-title="办理入住"
-    form-description="办理完成后，床位和客户状态会实时联动。"
+    :full-width="true"
   >
+    <template #table-actions>
+      <div class="table-toolbar">
+        <el-button type="primary" @click="openCreateDialog">办理入住</el-button>
+      </div>
+    </template>
+
     <template #table>
       <el-table :data="checkIns" border>
         <el-table-column label="客户" min-width="120">
@@ -25,43 +30,56 @@
       </el-table>
     </template>
 
-    <template #form>
-      <el-form label-position="top" :model="form" @submit.prevent>
-        <el-form-item label="客户">
-          <el-select v-model="form.residentId" class="full-width" filterable>
-            <el-option
-              v-for="resident in availableResidents"
-              :key="resident.id"
-              :label="`${resident.fullName} / ${resident.phone}`"
-              :value="resident.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="分配床位">
-          <el-select v-model="form.bedId" class="full-width" filterable>
-            <el-option
-              v-for="bed in availableBeds"
-              :key="bed.id"
-              :label="`${bed.room?.roomNo || '--'} / ${bed.bedNo}`"
-              :value="bed.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="入住时间">
-          <el-date-picker
-            v-model="form.checkInAt"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            class="full-width"
-          />
-        </el-form-item>
-        <el-form-item label="备注">
-          <el-input v-model="form.note" type="textarea" :rows="4" placeholder="可记录押金、合同或入住说明" />
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitForm">提交入住登记</el-button>
-      </el-form>
-    </template>
   </CrudPageShell>
+
+  <el-dialog
+    v-model="dialogVisible"
+    title="办理入住"
+    width="680px"
+    destroy-on-close
+    @closed="resetForm"
+  >
+    <el-form label-position="top" :model="form" @submit.prevent>
+      <el-form-item label="客户">
+        <el-select v-model="form.residentId" class="full-width" filterable>
+          <el-option
+            v-for="resident in availableResidents"
+            :key="resident.id"
+            :label="`${resident.fullName} / ${resident.phone}`"
+            :value="resident.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="分配床位">
+        <el-select v-model="form.bedId" class="full-width" filterable>
+          <el-option
+            v-for="bed in availableBeds"
+            :key="bed.id"
+            :label="`${bed.room?.roomNo || '--'} / ${bed.bedNo}`"
+            :value="bed.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="入住时间">
+        <el-date-picker
+          v-model="form.checkInAt"
+          type="datetime"
+          value-format="YYYY-MM-DDTHH:mm:ss"
+          class="full-width"
+        />
+      </el-form-item>
+      <el-form-item label="备注">
+        <el-input v-model="form.note" type="textarea" :rows="4" placeholder="可记录押金、合同或入住说明" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary" @click="submitForm">提交入住登记</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -81,6 +99,7 @@ import { formatDateTime } from '@/modules/shared/utils/format'
 const checkIns = ref<CheckInItem[]>([])
 const residents = ref<ResidentItem[]>([])
 const beds = ref<BedItem[]>([])
+const dialogVisible = ref(false)
 const form = reactive({
   residentId: null as number | null,
   bedId: null as number | null,
@@ -94,6 +113,24 @@ const availableResidents = computed(() =>
 const availableBeds = computed(() => beds.value.filter((item) => item.status === 'VACANT'))
 
 onMounted(loadData)
+
+function resetForm() {
+  Object.assign(form, {
+    residentId: null,
+    bedId: null,
+    checkInAt: new Date().toISOString().slice(0, 19),
+    note: '',
+  })
+}
+
+function openCreateDialog() {
+  resetForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
 
 async function loadData() {
   const [checkInRes, residentRes, bedRes] = await Promise.all([
@@ -114,12 +151,8 @@ async function submitForm() {
     note: form.note,
   })
   ElMessage.success('入住登记成功')
-  Object.assign(form, {
-    residentId: null,
-    bedId: null,
-    checkInAt: new Date().toISOString().slice(0, 19),
-    note: '',
-  })
+  closeDialog()
+  resetForm()
   await loadData()
 }
 </script>
@@ -127,5 +160,16 @@ async function submitForm() {
 <style scoped lang="scss">
 .full-width {
   width: 100%;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

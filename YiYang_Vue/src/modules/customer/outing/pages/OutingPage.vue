@@ -5,9 +5,14 @@
     description="登记在住客户的外出与归院情况，支持预计归院时间、去向和原因维护。"
     table-title="外出记录"
     table-description="未归院记录可直接点击归院登记，形成外出状态闭环。"
-    form-title="新增外出"
-    form-description="外出登记仅面向在住客户，避免已退住客户进入流转。"
+    :full-width="true"
   >
+    <template #table-actions>
+      <div class="table-toolbar">
+        <el-button type="primary" @click="openCreateDialog">新增外出</el-button>
+      </div>
+    </template>
+
     <template #table>
       <el-table :data="outings" border>
         <el-table-column label="客户" min-width="120">
@@ -46,44 +51,57 @@
       </el-table>
     </template>
 
-    <template #form>
-      <el-form label-position="top" :model="form" @submit.prevent>
-        <el-form-item label="客户">
-          <el-select v-model="form.residentId" class="full-width" filterable>
-            <el-option
-              v-for="resident in activeResidents"
-              :key="resident.id"
-              :label="`${resident.fullName} / ${resident.phone}`"
-              :value="resident.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="外出时间">
-          <el-date-picker
-            v-model="form.startAt"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            class="full-width"
-          />
-        </el-form-item>
-        <el-form-item label="预计归院时间">
-          <el-date-picker
-            v-model="form.expectedReturnAt"
-            type="datetime"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            class="full-width"
-          />
-        </el-form-item>
-        <el-form-item label="去向">
-          <el-input v-model="form.destination" placeholder="例如 医院 / 家属家中" />
-        </el-form-item>
-        <el-form-item label="外出原因">
-          <el-input v-model="form.reason" placeholder="例如 复诊 / 探亲" />
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitForm">提交外出登记</el-button>
-      </el-form>
-    </template>
   </CrudPageShell>
+
+  <el-dialog
+    v-model="dialogVisible"
+    title="新增外出"
+    width="680px"
+    destroy-on-close
+    @closed="resetForm"
+  >
+    <el-form label-position="top" :model="form" @submit.prevent>
+      <el-form-item label="客户">
+        <el-select v-model="form.residentId" class="full-width" filterable>
+          <el-option
+            v-for="resident in activeResidents"
+            :key="resident.id"
+            :label="`${resident.fullName} / ${resident.phone}`"
+            :value="resident.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="外出时间">
+        <el-date-picker
+          v-model="form.startAt"
+          type="datetime"
+          value-format="YYYY-MM-DDTHH:mm:ss"
+          class="full-width"
+        />
+      </el-form-item>
+      <el-form-item label="预计归院时间">
+        <el-date-picker
+          v-model="form.expectedReturnAt"
+          type="datetime"
+          value-format="YYYY-MM-DDTHH:mm:ss"
+          class="full-width"
+        />
+      </el-form-item>
+      <el-form-item label="去向">
+        <el-input v-model="form.destination" placeholder="例如 医院 / 家属家中" />
+      </el-form-item>
+      <el-form-item label="外出原因">
+        <el-input v-model="form.reason" placeholder="例如 复诊 / 探亲" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary" @click="submitForm">提交外出登记</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -101,6 +119,7 @@ import { formatDateTime } from '@/modules/shared/utils/format'
 
 const outings = ref<OutingItem[]>([])
 const residents = ref<ResidentItem[]>([])
+const dialogVisible = ref(false)
 const form = reactive({
   residentId: null as number | null,
   startAt: new Date().toISOString().slice(0, 19),
@@ -112,6 +131,25 @@ const form = reactive({
 const activeResidents = computed(() => residents.value.filter((item) => item.status === 'ACTIVE'))
 
 onMounted(loadData)
+
+function resetForm() {
+  Object.assign(form, {
+    residentId: null,
+    startAt: new Date().toISOString().slice(0, 19),
+    expectedReturnAt: '',
+    destination: '',
+    reason: '',
+  })
+}
+
+function openCreateDialog() {
+  resetForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
 
 async function loadData() {
   const [outingRes, residentRes] = await Promise.all([getOutings(), getResidents()])
@@ -128,13 +166,8 @@ async function submitForm() {
     reason: form.reason,
   })
   ElMessage.success('外出登记成功')
-  Object.assign(form, {
-    residentId: null,
-    startAt: new Date().toISOString().slice(0, 19),
-    expectedReturnAt: '',
-    destination: '',
-    reason: '',
-  })
+  closeDialog()
+  resetForm()
   await loadData()
 }
 
@@ -150,5 +183,16 @@ async function markReturned(id: number) {
 <style scoped lang="scss">
 .full-width {
   width: 100%;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
