@@ -5,9 +5,14 @@
     description="将护理内容挂到护理级别之下，配置频次、标准时长和执行说明，方便护理记录快速录入。"
     table-title="护理内容列表"
     table-description="内容项属于某个护理级别，可作为护理包拆分的基础单元。"
-    form-title="护理内容维护"
-    form-description="建议将洗漱、翻身、生命体征等动作拆成独立项目，后续便于统计。"
+    :full-width="true"
   >
+    <template #table-actions>
+      <div class="table-toolbar">
+        <el-button type="primary" @click="openCreateDialog">新建护理内容</el-button>
+      </div>
+    </template>
+
     <template #table>
       <el-table :data="careItems" border>
         <el-table-column label="所属级别" min-width="140">
@@ -43,52 +48,61 @@
       </el-table>
     </template>
 
-    <template #form-actions>
-      <el-button text @click="resetForm">重置</el-button>
-    </template>
+  </CrudPageShell>
 
-    <template #form>
-      <el-form label-position="top" :model="form" @submit.prevent>
-        <el-form-item label="所属护理级别">
-          <el-select v-model="form.careLevelId" class="full-width" filterable>
-            <el-option
-              v-for="level in careLevels"
-              :key="level.id"
-              :label="`${level.code} / ${level.name}`"
-              :value="level.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="护理内容">
-          <el-input v-model="form.name" placeholder="例如 晨间生命体征测量" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="频次">
-              <el-input v-model="form.frequency" placeholder="例如 每日 2 次" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="标准时长（分钟）">
-              <el-input-number v-model="form.durationMinutes" :min="0" :max="240" class="full-width" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="内容说明">
-          <el-input v-model="form.description" type="textarea" :rows="3" placeholder="护理内容简介" />
-        </el-form-item>
-        <el-form-item label="执行说明">
-          <el-input v-model="form.instructions" type="textarea" :rows="4" placeholder="记录操作规范、注意事项或异常上报要求" />
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-switch v-model="form.isActive" />
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitForm">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="dialogTitle"
+    width="680px"
+    destroy-on-close
+    @closed="resetForm"
+  >
+    <el-form label-position="top" :model="form" @submit.prevent>
+      <el-form-item label="所属护理级别">
+        <el-select v-model="form.careLevelId" class="full-width" filterable>
+          <el-option
+            v-for="level in careLevels"
+            :key="level.id"
+            :label="`${level.code} / ${level.name}`"
+            :value="level.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="护理内容">
+        <el-input v-model="form.name" placeholder="例如 晨间生命体征测量" />
+      </el-form-item>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="频次">
+            <el-input v-model="form.frequency" placeholder="例如 每日 2 次" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="标准时长（分钟）">
+            <el-input-number v-model="form.durationMinutes" :min="0" :max="240" class="full-width" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item label="内容说明">
+        <el-input v-model="form.description" type="textarea" :rows="3" placeholder="护理内容简介" />
+      </el-form-item>
+      <el-form-item label="执行说明">
+        <el-input v-model="form.instructions" type="textarea" :rows="4" placeholder="记录操作规范、注意事项或异常上报要求" />
+      </el-form-item>
+      <el-form-item label="启用状态">
+        <el-switch v-model="form.isActive" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary" @click="submitForm">
           {{ form.id ? '更新护理内容' : '新建护理内容' }}
         </el-button>
-      </el-form>
+      </div>
     </template>
-  </CrudPageShell>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -116,7 +130,9 @@ type CareItemForm = {
 
 const careItems = ref<CareItemItem[]>([])
 const careLevels = ref<CareLevelItem[]>([])
+const dialogVisible = ref(false)
 const form = reactive<CareItemForm>(createForm())
+const dialogTitle = computed(() => (form.id ? '编辑护理内容' : '新建护理内容'))
 
 onMounted(loadData)
 
@@ -143,6 +159,15 @@ function resetForm() {
   Object.assign(form, createForm())
 }
 
+function openCreateDialog() {
+  resetForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
+
 function startEdit(row: CareItemItem) {
   Object.assign(form, {
     id: row.id,
@@ -154,6 +179,7 @@ function startEdit(row: CareItemItem) {
     instructions: row.instructions || '',
     isActive: row.isActive,
   })
+  dialogVisible.value = true
 }
 
 async function submitForm() {
@@ -175,6 +201,7 @@ async function submitForm() {
     ElMessage.success('护理内容创建成功')
   }
 
+  closeDialog()
   resetForm()
   await loadData()
 }
@@ -183,5 +210,16 @@ async function submitForm() {
 <style scoped lang="scss">
 .full-width {
   width: 100%;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

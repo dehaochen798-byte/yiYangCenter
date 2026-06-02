@@ -5,9 +5,14 @@
     description="维护园区维度的每周菜单，支持周起始日期和每天菜单录入，为膳食公示和后续打印留基础数据。"
     table-title="周菜单列表"
     table-description="当前按一周七天维护，可后续扩展到早餐/午餐/晚餐拆分。"
-    form-title="菜单维护"
-    form-description="建议先建立标准周模板，再按园区或节假日做差异化调整。"
+    :full-width="true"
   >
+    <template #table-actions>
+      <div class="table-toolbar">
+        <el-button type="primary" @click="openCreateDialog">新建周菜单</el-button>
+      </div>
+    </template>
+
     <template #table>
       <el-table :data="mealCalendars" border>
         <el-table-column prop="campus" label="园区" min-width="120" />
@@ -30,36 +35,45 @@
       </el-table>
     </template>
 
-    <template #form-actions>
-      <el-button text @click="resetForm">重置</el-button>
-    </template>
+  </CrudPageShell>
 
-    <template #form>
-      <el-form label-position="top" :model="form" @submit.prevent>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="园区">
-              <el-input v-model="form.campus" placeholder="例如 东区园区" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="周标识">
-              <el-input v-model="form.weekLabel" placeholder="例如 2026 年第 23 周" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="周起始日期">
-          <el-date-picker v-model="form.weekStartDate" type="date" value-format="YYYY-MM-DDT00:00:00" class="full-width" />
-        </el-form-item>
-        <el-form-item v-for="day in dayFields" :key="day.key" :label="day.label">
-          <el-input v-model="form[day.key]" placeholder="例如 红枣粥 / 清炒西兰花 / 番茄牛腩" />
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitForm">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="dialogTitle"
+    width="680px"
+    destroy-on-close
+    @closed="resetForm"
+  >
+    <el-form label-position="top" :model="form" @submit.prevent>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="园区">
+            <el-input v-model="form.campus" placeholder="例如 东区园区" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="周标识">
+            <el-input v-model="form.weekLabel" placeholder="例如 2026 年第 23 周" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item label="周起始日期">
+        <el-date-picker v-model="form.weekStartDate" type="date" value-format="YYYY-MM-DDT00:00:00" class="full-width" />
+      </el-form-item>
+      <el-form-item v-for="day in dayFields" :key="day.key" :label="day.label">
+        <el-input v-model="form[day.key]" placeholder="例如 红枣粥 / 清炒西兰花 / 番茄牛腩" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary" @click="submitForm">
           {{ form.id ? '更新周菜单' : '新建周菜单' }}
         </el-button>
-      </el-form>
+      </div>
     </template>
-  </CrudPageShell>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -100,7 +114,9 @@ const dayFields: Array<{ key: DayKey; label: string }> = [
 ]
 
 const mealCalendars = ref<MealCalendarItem[]>([])
+const dialogVisible = ref(false)
 const form = reactive<MealCalendarForm>(createForm())
+const dialogTitle = computed(() => (form.id ? '编辑周菜单' : '新建周菜单'))
 
 onMounted(loadData)
 
@@ -129,6 +145,15 @@ function resetForm() {
   Object.assign(form, createForm())
 }
 
+function openCreateDialog() {
+  resetForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
+
 function startEdit(row: MealCalendarItem) {
   Object.assign(form, {
     id: row.id,
@@ -143,6 +168,7 @@ function startEdit(row: MealCalendarItem) {
     saturday: row.saturday || '',
     sunday: row.sunday || '',
   })
+  dialogVisible.value = true
 }
 
 async function submitForm() {
@@ -167,6 +193,7 @@ async function submitForm() {
     ElMessage.success('周菜单创建成功')
   }
 
+  closeDialog()
   resetForm()
   await loadData()
 }
@@ -175,5 +202,16 @@ async function submitForm() {
 <style scoped lang="scss">
 .full-width {
   width: 100%;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

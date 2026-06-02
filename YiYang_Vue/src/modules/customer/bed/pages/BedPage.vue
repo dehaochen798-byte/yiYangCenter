@@ -5,8 +5,7 @@
     description="在同一页面维护房间和床位，支持空床/占床状态查看，为入住登记提供即时可选床位。"
     table-title="床位总览"
     table-description="按房间展示床位状态，已入住客户会直接显示在对应床位上。"
-    form-title="房间/床位配置"
-    form-description="先建房间，再为房间补充床位。页面会自动维护房间床位数量。"
+    :full-width="true"
   >
     <template #hero-extra>
       <div class="bed-stats">
@@ -22,7 +21,12 @@
     </template>
 
     <template #table-actions>
-      <el-segmented v-model="activeTab" :options="tabOptions" />
+      <div class="table-toolbar">
+        <el-segmented v-model="activeTab" :options="tabOptions" @change="handleTabChange" />
+        <el-button type="primary" @click="openCreateDialog">
+          新建{{ activeTab === 'room' ? '房间' : '床位' }}
+        </el-button>
+      </div>
     </template>
 
     <template #table>
@@ -80,83 +84,92 @@
       </el-table>
     </template>
 
-    <template #form-actions>
-      <el-button text @click="resetCurrentForm">重置</el-button>
-    </template>
+  </CrudPageShell>
 
-    <template #form>
-      <el-form v-if="activeTab === 'room'" label-position="top" :model="roomForm" @submit.prevent>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="楼栋">
-              <el-input v-model="roomForm.building" placeholder="例如 A 栋" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="房间号">
-              <el-input v-model="roomForm.roomNo" placeholder="例如 201" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="楼层">
-              <el-input-number v-model="roomForm.floor" :min="1" :max="30" class="full-width" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="房型">
-              <el-input v-model="roomForm.roomType" placeholder="例如 双人间" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="房间说明">
-          <el-input v-model="roomForm.description" type="textarea" :rows="4" placeholder="可记录朝向、护理专区等信息" />
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-switch v-model="roomForm.isActive" />
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitRoom">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="dialogTitle"
+    width="680px"
+    destroy-on-close
+    @closed="resetCurrentForm"
+  >
+    <el-form v-if="activeTab === 'room'" label-position="top" :model="roomForm" @submit.prevent>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="楼栋">
+            <el-input v-model="roomForm.building" placeholder="例如 A 栋" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="房间号">
+            <el-input v-model="roomForm.roomNo" placeholder="例如 201" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="楼层">
+            <el-input-number v-model="roomForm.floor" :min="1" :max="30" class="full-width" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="房型">
+            <el-input v-model="roomForm.roomType" placeholder="例如 双人间" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item label="房间说明">
+        <el-input v-model="roomForm.description" type="textarea" :rows="4" placeholder="可记录朝向、护理专区等信息" />
+      </el-form-item>
+      <el-form-item label="启用状态">
+        <el-switch v-model="roomForm.isActive" />
+      </el-form-item>
+    </el-form>
+
+    <el-form v-else label-position="top" :model="bedForm" @submit.prevent>
+      <el-form-item label="所属房间">
+        <el-select v-model="bedForm.roomId" class="full-width" filterable>
+          <el-option
+            v-for="room in rooms"
+            :key="room.id"
+            :label="`${room.building || '默认楼栋'} / ${room.roomNo}`"
+            :value="room.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="床位编号">
+            <el-input v-model="bedForm.bedNo" placeholder="例如 A 床" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="床位标签">
+            <el-input v-model="bedForm.label" placeholder="例如 靠窗 / 护理床" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item label="床位状态">
+        <el-select v-model="bedForm.status" class="full-width">
+          <el-option label="空床" value="VACANT" />
+          <el-option label="占床" value="OCCUPIED" />
+          <el-option label="停用" value="DISABLED" />
+        </el-select>
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button v-if="activeTab === 'room'" type="primary" @click="submitRoom">
           {{ roomForm.id ? '更新房间' : '新建房间' }}
         </el-button>
-      </el-form>
-
-      <el-form v-else label-position="top" :model="bedForm" @submit.prevent>
-        <el-form-item label="所属房间">
-          <el-select v-model="bedForm.roomId" class="full-width" filterable>
-            <el-option
-              v-for="room in rooms"
-              :key="room.id"
-              :label="`${room.building || '默认楼栋'} / ${room.roomNo}`"
-              :value="room.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="床位编号">
-              <el-input v-model="bedForm.bedNo" placeholder="例如 A 床" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="床位标签">
-              <el-input v-model="bedForm.label" placeholder="例如 靠窗 / 护理床" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="床位状态">
-          <el-select v-model="bedForm.status" class="full-width">
-            <el-option label="空床" value="VACANT" />
-            <el-option label="占床" value="OCCUPIED" />
-            <el-option label="停用" value="DISABLED" />
-          </el-select>
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitBed">
+        <el-button v-else type="primary" @click="submitBed">
           {{ bedForm.id ? '更新床位' : '新建床位' }}
         </el-button>
-      </el-form>
+      </div>
     </template>
-  </CrudPageShell>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -209,14 +222,18 @@ const bedStatusTagMap = {
 
 const rooms = ref<RoomItem[]>([])
 const beds = ref<BedItem[]>([])
+const dialogVisible = ref(false)
 const roomForm = reactive<RoomForm>(createRoomForm())
 const bedForm = reactive<BedForm>(createBedForm())
+const dialogTitle = computed(() => {
+  if (activeTab.value === 'room') {
+    return roomForm.id ? '编辑房间' : '新建房间'
+  }
+
+  return bedForm.id ? '编辑床位' : '新建床位'
+})
 
 onMounted(loadData)
-
-watch(activeTab, () => {
-  resetCurrentForm()
-})
 
 function createRoomForm(): RoomForm {
   return {
@@ -255,6 +272,20 @@ function resetCurrentForm() {
   Object.assign(bedForm, createBedForm())
 }
 
+function openCreateDialog() {
+  resetCurrentForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
+
+function handleTabChange() {
+  closeDialog()
+  resetCurrentForm()
+}
+
 function startEditRoom(row: RoomItem) {
   activeTab.value = 'room'
   Object.assign(roomForm, {
@@ -266,6 +297,7 @@ function startEditRoom(row: RoomItem) {
     description: row.description || '',
     isActive: row.isActive,
   })
+  dialogVisible.value = true
 }
 
 function startEditBed(row: BedItem) {
@@ -277,6 +309,7 @@ function startEditBed(row: BedItem) {
     label: row.label || '',
     status: row.status,
   })
+  dialogVisible.value = true
 }
 
 async function submitRoom() {
@@ -297,6 +330,7 @@ async function submitRoom() {
     ElMessage.success('房间创建成功')
   }
 
+  closeDialog()
   resetCurrentForm()
   await loadData()
 }
@@ -317,6 +351,7 @@ async function submitBed() {
     ElMessage.success('床位创建成功')
   }
 
+  closeDialog()
   resetCurrentForm()
   await loadData()
 }
@@ -325,6 +360,17 @@ async function submitBed() {
 <style scoped lang="scss">
 .full-width {
   width: 100%;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .bed-stats {
@@ -350,6 +396,14 @@ async function submitBed() {
       font-size: 12px;
       color: var(--yy-color-text-secondary);
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .table-toolbar {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 </style>

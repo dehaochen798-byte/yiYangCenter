@@ -5,9 +5,14 @@
     description="记录客户购买或正在享受的服务内容，支持开始结束时间、状态和备注维护。"
     table-title="服务关注列表"
     table-description="适合登记康复护理、专项陪护、营养管理等有周期的服务。"
-    form-title="服务信息维护"
-    form-description="可用于后续扩展续费提醒、到期提醒和套餐管理。"
+    :full-width="true"
   >
+    <template #table-actions>
+      <div class="table-toolbar">
+        <el-button type="primary" @click="openCreateDialog">新建服务信息</el-button>
+      </div>
+    </template>
+
     <template #table>
       <el-table :data="serviceFocuses" border>
         <el-table-column label="客户" min-width="120">
@@ -35,53 +40,62 @@
       </el-table>
     </template>
 
-    <template #form-actions>
-      <el-button text @click="resetForm">重置</el-button>
-    </template>
+  </CrudPageShell>
 
-    <template #form>
-      <el-form label-position="top" :model="form" @submit.prevent>
-        <el-form-item label="客户">
-          <el-select v-model="form.residentId" class="full-width" filterable>
-            <el-option
-              v-for="resident in residents"
-              :key="resident.id"
-              :label="`${resident.fullName} / ${resident.phone}`"
-              :value="resident.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="服务名称">
-          <el-input v-model="form.serviceName" placeholder="例如 专项康复护理包" />
-        </el-form-item>
-        <el-form-item label="服务说明">
-          <el-input v-model="form.detail" type="textarea" :rows="4" placeholder="记录服务内容、次数或关键承诺" />
-        </el-form-item>
-        <el-row :gutter="12">
-          <el-col :span="12">
-            <el-form-item label="开始日期">
-              <el-date-picker v-model="form.serviceStartAt" type="date" value-format="YYYY-MM-DDT00:00:00" class="full-width" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="结束日期">
-              <el-date-picker v-model="form.serviceEndAt" type="date" value-format="YYYY-MM-DDT00:00:00" class="full-width" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-form-item label="状态">
-          <el-select v-model="form.status" class="full-width">
-            <el-option label="进行中" value="ACTIVE" />
-            <el-option label="暂停" value="PAUSED" />
-            <el-option label="结束" value="ENDED" />
-          </el-select>
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitForm">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="dialogTitle"
+    width="680px"
+    destroy-on-close
+    @closed="resetForm"
+  >
+    <el-form label-position="top" :model="form" @submit.prevent>
+      <el-form-item label="客户">
+        <el-select v-model="form.residentId" class="full-width" filterable>
+          <el-option
+            v-for="resident in residents"
+            :key="resident.id"
+            :label="`${resident.fullName} / ${resident.phone}`"
+            :value="resident.id"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="服务名称">
+        <el-input v-model="form.serviceName" placeholder="例如 专项康复护理包" />
+      </el-form-item>
+      <el-form-item label="服务说明">
+        <el-input v-model="form.detail" type="textarea" :rows="4" placeholder="记录服务内容、次数或关键承诺" />
+      </el-form-item>
+      <el-row :gutter="12">
+        <el-col :span="12">
+          <el-form-item label="开始日期">
+            <el-date-picker v-model="form.serviceStartAt" type="date" value-format="YYYY-MM-DDT00:00:00" class="full-width" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="结束日期">
+            <el-date-picker v-model="form.serviceEndAt" type="date" value-format="YYYY-MM-DDT00:00:00" class="full-width" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item label="状态">
+        <el-select v-model="form.status" class="full-width">
+          <el-option label="进行中" value="ACTIVE" />
+          <el-option label="暂停" value="PAUSED" />
+          <el-option label="结束" value="ENDED" />
+        </el-select>
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary" @click="submitForm">
           {{ form.id ? '更新服务信息' : '新建服务信息' }}
         </el-button>
-      </el-form>
+      </div>
     </template>
-  </CrudPageShell>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -121,7 +135,9 @@ const statusTypeMap = {
 
 const serviceFocuses = ref<ServiceFocusItem[]>([])
 const residents = ref<ResidentItem[]>([])
+const dialogVisible = ref(false)
 const form = reactive<ServiceFocusForm>(createForm())
+const dialogTitle = computed(() => (form.id ? '编辑服务信息' : '新建服务信息'))
 
 onMounted(loadData)
 
@@ -147,6 +163,15 @@ function resetForm() {
   Object.assign(form, createForm())
 }
 
+function openCreateDialog() {
+  resetForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
+
 function startEdit(row: ServiceFocusItem) {
   Object.assign(form, {
     id: row.id,
@@ -157,6 +182,7 @@ function startEdit(row: ServiceFocusItem) {
     serviceEndAt: row.serviceEndAt || '',
     status: row.status,
   })
+  dialogVisible.value = true
 }
 
 async function submitForm() {
@@ -177,6 +203,7 @@ async function submitForm() {
     ElMessage.success('服务信息创建成功')
   }
 
+  closeDialog()
   resetForm()
   await loadData()
 }
@@ -185,5 +212,16 @@ async function submitForm() {
 <style scoped lang="scss">
 .full-width {
   width: 100%;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

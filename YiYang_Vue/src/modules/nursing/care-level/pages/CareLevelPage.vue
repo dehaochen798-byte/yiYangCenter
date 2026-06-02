@@ -5,9 +5,14 @@
     description="定义护理级别编码、名称和启停状态，客户档案和护理内容会直接引用这里的分级。"
     table-title="护理级别列表"
     table-description="建议用编码区分失能等级、护理套餐或园区内部分层。"
-    form-title="级别维护"
-    form-description="启用中的级别可直接分配给客户，停用后不影响历史记录。"
+    :full-width="true"
   >
+    <template #table-actions>
+      <div class="table-toolbar">
+        <el-button type="primary" @click="openCreateDialog">新建护理级别</el-button>
+      </div>
+    </template>
+
     <template #table>
       <el-table :data="careLevels" border>
         <el-table-column prop="code" label="级别编码" min-width="120" />
@@ -38,30 +43,39 @@
       </el-table>
     </template>
 
-    <template #form-actions>
-      <el-button text @click="resetForm">重置</el-button>
-    </template>
+  </CrudPageShell>
 
-    <template #form>
-      <el-form label-position="top" :model="form" @submit.prevent>
-        <el-form-item label="级别编码">
-          <el-input v-model="form.code" placeholder="例如 CL-01" />
-        </el-form-item>
-        <el-form-item label="级别名称">
-          <el-input v-model="form.name" placeholder="例如 一级护理" />
-        </el-form-item>
-        <el-form-item label="级别说明">
-          <el-input v-model="form.description" type="textarea" :rows="5" placeholder="描述服务对象、服务强度、适用范围" />
-        </el-form-item>
-        <el-form-item label="启用状态">
-          <el-switch v-model="form.isActive" />
-        </el-form-item>
-        <el-button type="primary" class="full-width" @click="submitForm">
+  <el-dialog
+    v-model="dialogVisible"
+    :title="dialogTitle"
+    width="640px"
+    destroy-on-close
+    @closed="resetForm"
+  >
+    <el-form label-position="top" :model="form" @submit.prevent>
+      <el-form-item label="级别编码">
+        <el-input v-model="form.code" placeholder="例如 CL-01" />
+      </el-form-item>
+      <el-form-item label="级别名称">
+        <el-input v-model="form.name" placeholder="例如 一级护理" />
+      </el-form-item>
+      <el-form-item label="级别说明">
+        <el-input v-model="form.description" type="textarea" :rows="5" placeholder="描述服务对象、服务强度、适用范围" />
+      </el-form-item>
+      <el-form-item label="启用状态">
+        <el-switch v-model="form.isActive" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeDialog">取消</el-button>
+        <el-button type="primary" @click="submitForm">
           {{ form.id ? '更新护理级别' : '新建护理级别' }}
         </el-button>
-      </el-form>
+      </div>
     </template>
-  </CrudPageShell>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -83,7 +97,9 @@ type CareLevelForm = {
 }
 
 const careLevels = ref<CareLevelItem[]>([])
+const dialogVisible = ref(false)
 const form = reactive<CareLevelForm>(createForm())
+const dialogTitle = computed(() => (form.id ? '编辑护理级别' : '新建护理级别'))
 
 onMounted(loadData)
 
@@ -106,6 +122,15 @@ function resetForm() {
   Object.assign(form, createForm())
 }
 
+function openCreateDialog() {
+  resetForm()
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
+
 function startEdit(row: CareLevelItem) {
   Object.assign(form, {
     id: row.id,
@@ -114,6 +139,7 @@ function startEdit(row: CareLevelItem) {
     description: row.description || '',
     isActive: row.isActive,
   })
+  dialogVisible.value = true
 }
 
 async function submitForm() {
@@ -132,6 +158,7 @@ async function submitForm() {
     ElMessage.success('护理级别创建成功')
   }
 
+  closeDialog()
   resetForm()
   await loadData()
 }
@@ -140,5 +167,16 @@ async function submitForm() {
 <style scoped lang="scss">
 .full-width {
   width: 100%;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
