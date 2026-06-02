@@ -185,6 +185,7 @@ import {
   type BedItem,
   type RoomItem,
 } from '@/modules/customer/api/customer.api'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type RoomForm = {
   id: number | null
@@ -313,6 +314,19 @@ function startEditBed(row: BedItem) {
 }
 
 async function submitRoom() {
+  const valid = validateFieldTypes([
+    { label: '楼栋', type: 'string', value: roomForm.building, optional: true },
+    { label: '房间号', type: 'string', value: roomForm.roomNo },
+    { label: '楼层', type: 'number', value: roomForm.floor },
+    { label: '房型', type: 'string', value: roomForm.roomType, optional: true },
+    { label: '房间说明', type: 'string', value: roomForm.description, optional: true },
+    { label: '启用状态', type: 'boolean', value: roomForm.isActive },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     building: roomForm.building,
     roomNo: roomForm.roomNo,
@@ -336,6 +350,17 @@ async function submitRoom() {
 }
 
 async function submitBed() {
+  const valid = validateFieldTypes([
+    { label: '所属房间', type: 'number', value: bedForm.roomId },
+    { label: '床位编号', type: 'string', value: bedForm.bedNo },
+    { label: '床位标签', type: 'string', value: bedForm.label, optional: true },
+    { label: '床位状态', type: 'string', value: bedForm.status, enumValues: ['VACANT', 'OCCUPIED', 'DISABLED'] },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     roomId: bedForm.roomId || undefined,
     bedNo: bedForm.bedNo,

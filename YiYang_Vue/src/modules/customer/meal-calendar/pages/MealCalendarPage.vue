@@ -86,6 +86,7 @@ import {
   type MealCalendarItem,
 } from '@/modules/customer/api/customer.api'
 import { formatDate } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type DayKey =
   | 'monday'
@@ -172,6 +173,22 @@ function startEdit(row: MealCalendarItem) {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '园区', type: 'string', value: form.campus, optional: true },
+    { label: '周标识', type: 'string', value: form.weekLabel },
+    { label: '周起始日期', type: 'datetime', value: form.weekStartDate },
+    ...dayFields.map((day) => ({
+      label: day.label,
+      type: 'string' as const,
+      value: form[day.key],
+      optional: true,
+    })),
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     campus: form.campus,
     weekLabel: form.weekLabel,

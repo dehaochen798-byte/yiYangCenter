@@ -2,117 +2,20 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { hash } from 'bcryptjs'
 import { BedStatus, Gender, OutingStatus, ResidenceStatus, ServiceFocusStatus, UserStatus } from '../../../generated/prisma/enums.js'
 import { PrismaService } from '../../prisma/prisma.service.js'
-
-type IdPayload = {
-  id: number
-}
-
-type ResidentPayload = {
-  fullName: string
-  age: number
-  gender: Gender
-  phone: string
-  idCard?: string
-  emergencyContactName?: string
-  emergencyContactPhone?: string
-  careLevelId?: number | null
-  note?: string
-}
-
-type UserPayload = {
-  mobile: string
-  realName: string
-  age: number
-  gender: Gender
-  roleName?: string
-  departmentName?: string
-  status?: UserStatus
-}
-
-type RoomPayload = {
-  building?: string
-  roomNo: string
-  floor: number
-  roomType?: string
-  description?: string
-  isActive?: boolean
-}
-
-type BedPayload = {
-  roomId: number
-  bedNo: string
-  label?: string
-  status?: BedStatus
-}
-
-type MealPlanPayload = {
-  residentId: number
-  title: string
-  description?: string
-  dietaryRestrictions?: string
-  allergens?: string
-  nutritionTags?: string
-  startDate?: string
-  endDate?: string
-}
-
-type MealCalendarPayload = {
-  campus?: string
-  weekLabel: string
-  weekStartDate: string
-  monday?: string
-  tuesday?: string
-  wednesday?: string
-  thursday?: string
-  friday?: string
-  saturday?: string
-  sunday?: string
-}
-
-type CheckInPayload = {
-  residentId: number
-  bedId: number
-  checkInAt: string
-  note?: string
-}
-
-type CheckOutPayload = {
-  residentId: number
-  checkOutAt: string
-  reason?: string
-  handoverNote?: string
-}
-
-type OutingPayload = {
-  residentId: number
-  startAt: string
-  expectedReturnAt?: string
-  destination?: string
-  reason?: string
-}
-
-type ReturnOutingPayload = {
-  actualReturnAt: string
-}
-
-type ServiceTargetPayload = {
-  residentId: number
-  managerUserId?: number | null
-  managerName: string
-  managerMobile: string
-  startDate?: string
-  endDate?: string
-  relationNote?: string
-}
-
-type ServiceFocusPayload = {
-  residentId: number
-  serviceName: string
-  detail?: string
-  serviceStartAt?: string
-  serviceEndAt?: string
-  status?: ServiceFocusStatus
-}
+import type {
+  CreateCheckInDto,
+  CreateCheckOutDto,
+  CreateOutingDto,
+  ReturnOutingDto,
+  SaveBedDto,
+  SaveMealCalendarDto,
+  SaveMealPlanDto,
+  SaveResidentDto,
+  SaveRoomDto,
+  SaveServiceFocusDto,
+  SaveServiceTargetDto,
+  SaveUserDto,
+} from './dto/customer.dto.js'
 
 function toDate(value?: string | null) {
   return value ? new Date(value) : null
@@ -197,7 +100,7 @@ export class CustomerService {
     }
   }
 
-  async createResident(payload: ResidentPayload) {
+  async createResident(payload: SaveResidentDto) {
     await this.ensurePhoneAvailable(payload.phone)
     await this.ensureCareLevelExists(payload.careLevelId)
 
@@ -230,7 +133,7 @@ export class CustomerService {
     }
   }
 
-  async updateResident(id: number, payload: ResidentPayload) {
+  async updateResident(id: number, payload: SaveResidentDto) {
     await this.ensureResidentExists(id)
     await this.ensurePhoneAvailable(payload.phone, id)
     await this.ensureCareLevelExists(payload.careLevelId)
@@ -292,7 +195,7 @@ export class CustomerService {
     }
   }
 
-  async createUser(payload: UserPayload) {
+  async createUser(payload: SaveUserDto) {
     const exists = await this.prisma.user.findUnique({
       where: { mobile: payload.mobile.trim() },
     })
@@ -335,7 +238,7 @@ export class CustomerService {
     }
   }
 
-  async updateUser(id: number, payload: UserPayload) {
+  async updateUser(id: number, payload: SaveUserDto) {
     const exists = await this.prisma.user.findUnique({ where: { id } })
 
     if (!exists) {
@@ -411,7 +314,7 @@ export class CustomerService {
     }
   }
 
-  async createRoom(payload: RoomPayload) {
+  async createRoom(payload: SaveRoomDto) {
     const room = await this.prisma.room.create({
       data: {
         building: normalizeText(payload.building),
@@ -431,7 +334,7 @@ export class CustomerService {
     }
   }
 
-  async updateRoom(id: number, payload: RoomPayload) {
+  async updateRoom(id: number, payload: SaveRoomDto) {
     const room = await this.prisma.room.update({
       where: { id },
       data: {
@@ -467,7 +370,7 @@ export class CustomerService {
     }
   }
 
-  async createBed(payload: BedPayload) {
+  async createBed(payload: SaveBedDto) {
     const room = await this.ensureRoomExists(payload.roomId)
 
     const bed = await this.prisma.bed.create({
@@ -492,7 +395,7 @@ export class CustomerService {
     }
   }
 
-  async updateBed(id: number, payload: BedPayload) {
+  async updateBed(id: number, payload: SaveBedDto) {
     const current = await this.prisma.bed.findUnique({
       where: { id },
       include: {
@@ -558,7 +461,7 @@ export class CustomerService {
     }
   }
 
-  async createMealPlan(payload: MealPlanPayload) {
+  async createMealPlan(payload: SaveMealPlanDto) {
     await this.ensureResidentExists(payload.residentId)
 
     const plan = await this.prisma.mealPlan.create({
@@ -584,7 +487,7 @@ export class CustomerService {
     }
   }
 
-  async updateMealPlan(id: number, payload: MealPlanPayload) {
+  async updateMealPlan(id: number, payload: SaveMealPlanDto) {
     await this.ensureResidentExists(payload.residentId)
 
     const plan = await this.prisma.mealPlan.update({
@@ -625,7 +528,7 @@ export class CustomerService {
     }
   }
 
-  async createMealCalendar(payload: MealCalendarPayload) {
+  async createMealCalendar(payload: SaveMealCalendarDto) {
     const calendar = await this.prisma.mealCalendar.create({
       data: {
         campus: normalizeText(payload.campus),
@@ -648,7 +551,7 @@ export class CustomerService {
     }
   }
 
-  async updateMealCalendar(id: number, payload: MealCalendarPayload) {
+  async updateMealCalendar(id: number, payload: SaveMealCalendarDto) {
     const calendar = await this.prisma.mealCalendar.update({
       where: { id },
       data: {
@@ -702,7 +605,7 @@ export class CustomerService {
     }
   }
 
-  async createCheckIn(payload: CheckInPayload) {
+  async createCheckIn(payload: CreateCheckInDto) {
     const resident = await this.ensureResidentExists(payload.residentId)
     const bed = await this.ensureBedExists(payload.bedId)
 
@@ -779,7 +682,7 @@ export class CustomerService {
     }
   }
 
-  async createCheckOut(payload: CheckOutPayload) {
+  async createCheckOut(payload: CreateCheckOutDto) {
     const resident = await this.ensureResidentExists(payload.residentId)
 
     if (!resident.currentBedId) {
@@ -847,7 +750,7 @@ export class CustomerService {
     }
   }
 
-  async createOuting(payload: OutingPayload) {
+  async createOuting(payload: CreateOutingDto) {
     const resident = await this.ensureResidentExists(payload.residentId)
 
     if (resident.status !== ResidenceStatus.ACTIVE) {
@@ -888,7 +791,7 @@ export class CustomerService {
     }
   }
 
-  async returnOuting(id: number, payload: ReturnOutingPayload) {
+  async returnOuting(id: number, payload: ReturnOutingDto) {
     const outing = await this.prisma.outing.findUnique({
       where: { id },
     })
@@ -940,7 +843,7 @@ export class CustomerService {
     }
   }
 
-  async createServiceTarget(payload: ServiceTargetPayload) {
+  async createServiceTarget(payload: SaveServiceTargetDto) {
     await this.ensureResidentExists(payload.residentId)
     await this.ensureManagerExists(payload.managerUserId)
 
@@ -974,7 +877,7 @@ export class CustomerService {
     }
   }
 
-  async updateServiceTarget(id: number, payload: ServiceTargetPayload) {
+  async updateServiceTarget(id: number, payload: SaveServiceTargetDto) {
     await this.ensureResidentExists(payload.residentId)
     await this.ensureManagerExists(payload.managerUserId)
 
@@ -1026,7 +929,7 @@ export class CustomerService {
     }
   }
 
-  async createServiceFocus(payload: ServiceFocusPayload) {
+  async createServiceFocus(payload: SaveServiceFocusDto) {
     await this.ensureResidentExists(payload.residentId)
 
     const item = await this.prisma.serviceFocus.create({
@@ -1050,7 +953,7 @@ export class CustomerService {
     }
   }
 
-  async updateServiceFocus(id: number, payload: ServiceFocusPayload) {
+  async updateServiceFocus(id: number, payload: SaveServiceFocusDto) {
     await this.ensureResidentExists(payload.residentId)
 
     const item = await this.prisma.serviceFocus.update({

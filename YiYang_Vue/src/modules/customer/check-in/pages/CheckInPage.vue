@@ -95,6 +95,7 @@ import {
   type ResidentItem,
 } from '@/modules/customer/api/customer.api'
 import { formatDateTime } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 const checkIns = ref<CheckInItem[]>([])
 const residents = ref<ResidentItem[]>([])
@@ -144,6 +145,17 @@ async function loadData() {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '分配床位', type: 'number', value: form.bedId },
+    { label: '入住时间', type: 'datetime', value: form.checkInAt },
+    { label: '备注', type: 'string', value: form.note, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   await createCheckIn({
     residentId: form.residentId || undefined,
     bedId: form.bedId || undefined,

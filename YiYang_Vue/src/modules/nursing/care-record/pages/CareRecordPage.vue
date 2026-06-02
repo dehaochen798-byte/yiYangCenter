@@ -126,6 +126,7 @@ import {
 } from '@/modules/nursing/api/nursing.api'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import { formatDateTime } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type CareRecordForm = {
   id: number | null
@@ -197,6 +198,18 @@ function startEdit(row: CareRecordItem) {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '护理项目', type: 'number', value: form.careItemId },
+    { label: '执行人', type: 'number', value: form.operatorId },
+    { label: '执行时间', type: 'datetime', value: form.executedAt },
+    { label: '执行备注', type: 'string', value: form.note, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     residentId: form.residentId || undefined,
     careItemId: form.careItemId || undefined,

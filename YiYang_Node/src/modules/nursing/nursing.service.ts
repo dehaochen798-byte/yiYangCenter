@@ -1,30 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service.js'
-
-type CareLevelPayload = {
-  code: string
-  name: string
-  description?: string
-  isActive?: boolean
-}
-
-type CareItemPayload = {
-  careLevelId: number
-  name: string
-  description?: string
-  frequency?: string
-  durationMinutes?: number | null
-  instructions?: string
-  isActive?: boolean
-}
-
-type CareRecordPayload = {
-  residentId: number
-  careItemId: number
-  operatorId: number
-  executedAt: string
-  note?: string
-}
+import type { SaveCareItemDto, SaveCareLevelDto, SaveCareRecordDto } from './dto/nursing.dto.js'
 
 function normalizeText(value?: string | null) {
   return value?.trim() || undefined
@@ -62,7 +38,7 @@ export class NursingService {
     }
   }
 
-  async createCareLevel(payload: CareLevelPayload) {
+  async createCareLevel(payload: SaveCareLevelDto) {
     const item = await this.prisma.careLevel.create({
       data: {
         code: payload.code.trim(),
@@ -87,7 +63,7 @@ export class NursingService {
     }
   }
 
-  async updateCareLevel(id: number, payload: CareLevelPayload) {
+  async updateCareLevel(id: number, payload: SaveCareLevelDto) {
     const item = await this.prisma.careLevel.update({
       where: { id },
       data: {
@@ -133,7 +109,7 @@ export class NursingService {
     }
   }
 
-  async createCareItem(payload: CareItemPayload) {
+  async createCareItem(payload: SaveCareItemDto) {
     await this.ensureCareLevelExists(payload.careLevelId)
 
     const item = await this.prisma.careItem.create({
@@ -163,7 +139,7 @@ export class NursingService {
     }
   }
 
-  async updateCareItem(id: number, payload: CareItemPayload) {
+  async updateCareItem(id: number, payload: SaveCareItemDto) {
     await this.ensureCareLevelExists(payload.careLevelId)
 
     const item = await this.prisma.careItem.update({
@@ -224,7 +200,7 @@ export class NursingService {
     }
   }
 
-  async createCareRecord(payload: CareRecordPayload) {
+  async createCareRecord(payload: SaveCareRecordDto) {
     await Promise.all([
       this.ensureResidentExists(payload.residentId),
       this.ensureCareItemExists(payload.careItemId),
@@ -264,7 +240,7 @@ export class NursingService {
     }
   }
 
-  async updateCareRecord(id: number, payload: CareRecordPayload) {
+  async updateCareRecord(id: number, payload: SaveCareRecordDto) {
     await Promise.all([
       this.ensureResidentExists(payload.residentId),
       this.ensureCareItemExists(payload.careItemId),

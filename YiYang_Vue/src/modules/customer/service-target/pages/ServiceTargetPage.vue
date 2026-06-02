@@ -120,6 +120,7 @@ import {
   type UserItem,
 } from '@/modules/customer/api/customer.api'
 import { formatDate } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type ServiceTargetForm = {
   id: number | null
@@ -204,6 +205,20 @@ function startEdit(row: ServiceTargetItem) {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '系统内健康管家', type: 'number', value: form.managerUserId, optional: true },
+    { label: '健康管家姓名', type: 'string', value: form.managerName },
+    { label: '联系电话', type: 'string', value: form.managerMobile },
+    { label: '开始日期', type: 'datetime', value: form.startDate, optional: true },
+    { label: '结束日期', type: 'datetime', value: form.endDate, optional: true },
+    { label: '关系说明', type: 'string', value: form.relationNote, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     residentId: form.residentId || undefined,
     managerUserId: form.managerUserId || undefined,

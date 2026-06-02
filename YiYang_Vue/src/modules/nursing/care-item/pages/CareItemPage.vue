@@ -116,6 +116,7 @@ import {
   type CareLevelItem,
 } from '@/modules/nursing/api/nursing.api'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type CareItemForm = {
   id: number | null
@@ -183,6 +184,20 @@ function startEdit(row: CareItemItem) {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '所属护理级别', type: 'number', value: form.careLevelId },
+    { label: '护理内容', type: 'string', value: form.name },
+    { label: '频次', type: 'string', value: form.frequency, optional: true },
+    { label: '标准时长', type: 'number', value: form.durationMinutes },
+    { label: '内容说明', type: 'string', value: form.description, optional: true },
+    { label: '执行说明', type: 'string', value: form.instructions, optional: true },
+    { label: '启用状态', type: 'boolean', value: form.isActive },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     careLevelId: form.careLevelId || undefined,
     name: form.name,

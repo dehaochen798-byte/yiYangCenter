@@ -240,6 +240,7 @@ import {
 } from '@/modules/customer/api/customer.api'
 import { getCareLevels, type CareLevelItem } from '@/modules/nursing/api/nursing.api'
 import { formatDateTime, mapGenderLabel } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type ResidentForm = {
   id: number | null
@@ -397,6 +398,22 @@ function startEditUser(row: UserItem) {
 }
 
 async function submitResident() {
+  const valid = validateFieldTypes([
+    { label: '客户姓名', type: 'string', value: residentForm.fullName },
+    { label: '手机号', type: 'string', value: residentForm.phone },
+    { label: '身份证号', type: 'string', value: residentForm.idCard, optional: true },
+    { label: '年龄', type: 'number', value: residentForm.age },
+    { label: '性别', type: 'string', value: residentForm.gender, enumValues: ['MALE', 'FEMALE'] },
+    { label: '紧急联系人', type: 'string', value: residentForm.emergencyContactName, optional: true },
+    { label: '联系人电话', type: 'string', value: residentForm.emergencyContactPhone, optional: true },
+    { label: '默认护理级别', type: 'number', value: residentForm.careLevelId, optional: true },
+    { label: '备注', type: 'string', value: residentForm.note, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     fullName: residentForm.fullName,
     phone: residentForm.phone,
@@ -423,6 +440,20 @@ async function submitResident() {
 }
 
 async function submitUser() {
+  const valid = validateFieldTypes([
+    { label: '姓名', type: 'string', value: userForm.realName },
+    { label: '手机号', type: 'string', value: userForm.mobile },
+    { label: '年龄', type: 'number', value: userForm.age },
+    { label: '性别', type: 'string', value: userForm.gender, enumValues: ['MALE', 'FEMALE'] },
+    { label: '状态', type: 'string', value: userForm.status, enumValues: ['ACTIVE', 'DISABLED'] },
+    { label: '岗位', type: 'string', value: userForm.roleName, optional: true },
+    { label: '部门', type: 'string', value: userForm.departmentName, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     realName: userForm.realName,
     mobile: userForm.mobile,

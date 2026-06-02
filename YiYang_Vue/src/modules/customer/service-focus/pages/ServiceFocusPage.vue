@@ -110,6 +110,7 @@ import {
   type ServiceFocusItem,
 } from '@/modules/customer/api/customer.api'
 import { formatDate } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type ServiceFocusForm = {
   id: number | null
@@ -186,6 +187,19 @@ function startEdit(row: ServiceFocusItem) {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '服务名称', type: 'string', value: form.serviceName },
+    { label: '服务说明', type: 'string', value: form.detail, optional: true },
+    { label: '开始日期', type: 'datetime', value: form.serviceStartAt, optional: true },
+    { label: '结束日期', type: 'datetime', value: form.serviceEndAt, optional: true },
+    { label: '状态', type: 'string', value: form.status, enumValues: ['ACTIVE', 'PAUSED', 'ENDED'] },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     residentId: form.residentId || undefined,
     serviceName: form.serviceName,

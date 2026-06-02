@@ -87,6 +87,7 @@ import {
   type ResidentItem,
 } from '@/modules/customer/api/customer.api'
 import { formatDateTime } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 const checkOuts = ref<CheckOutItem[]>([])
 const residents = ref<ResidentItem[]>([])
@@ -127,6 +128,17 @@ async function loadData() {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '退住时间', type: 'datetime', value: form.checkOutAt },
+    { label: '退住原因', type: 'string', value: form.reason, optional: true },
+    { label: '交接说明', type: 'string', value: form.handoverNote, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   await createCheckOut({
     residentId: form.residentId || undefined,
     checkOutAt: form.checkOutAt,

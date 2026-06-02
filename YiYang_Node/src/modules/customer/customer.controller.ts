@@ -1,5 +1,19 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js'
+import {
+  CreateCheckInDto,
+  CreateCheckOutDto,
+  CreateOutingDto,
+  ReturnOutingDto,
+  SaveBedDto,
+  SaveMealCalendarDto,
+  SaveMealPlanDto,
+  SaveResidentDto,
+  SaveRoomDto,
+  SaveServiceFocusDto,
+  SaveServiceTargetDto,
+  SaveUserDto,
+} from './dto/customer.dto.js'
 import { CustomerService } from './customer.service.js'
 
 @Controller('customer')
@@ -23,13 +37,13 @@ export class CustomerController {
   }
 
   @Post('residents')
-  createResident(@Body() body: Record<string, unknown>) {
-    return this.customerService.createResident(body as never)
+  createResident(@Body() body: SaveResidentDto) {
+    return this.customerService.createResident(body)
   }
 
   @Patch('residents/:id')
-  updateResident(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateResident(Number(id), body as never)
+  updateResident(@Param('id') id: string, @Body() body: SaveResidentDto) {
+    return this.customerService.updateResident(Number(id), body)
   }
 
   @Get('users')
@@ -38,13 +52,13 @@ export class CustomerController {
   }
 
   @Post('users')
-  createUser(@Body() body: Record<string, unknown>) {
-    return this.customerService.createUser(body as never)
+  createUser(@Body() body: SaveUserDto) {
+    return this.customerService.createUser(body)
   }
 
   @Patch('users/:id')
-  updateUser(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateUser(Number(id), body as never)
+  updateUser(@Param('id') id: string, @Body() body: SaveUserDto) {
+    return this.customerService.updateUser(Number(id), body)
   }
 
   @Get('rooms')
@@ -53,13 +67,13 @@ export class CustomerController {
   }
 
   @Post('rooms')
-  createRoom(@Body() body: Record<string, unknown>) {
-    return this.customerService.createRoom(body as never)
+  createRoom(@Body() body: SaveRoomDto) {
+    return this.customerService.createRoom(body)
   }
 
   @Patch('rooms/:id')
-  updateRoom(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateRoom(Number(id), body as never)
+  updateRoom(@Param('id') id: string, @Body() body: SaveRoomDto) {
+    return this.customerService.updateRoom(Number(id), body)
   }
 
   @Get('beds')
@@ -68,13 +82,13 @@ export class CustomerController {
   }
 
   @Post('beds')
-  createBed(@Body() body: Record<string, unknown>) {
-    return this.customerService.createBed(body as never)
+  createBed(@Body() body: SaveBedDto) {
+    return this.customerService.createBed(body)
   }
 
   @Patch('beds/:id')
-  updateBed(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateBed(Number(id), body as never)
+  updateBed(@Param('id') id: string, @Body() body: SaveBedDto) {
+    return this.customerService.updateBed(Number(id), body)
   }
 
   @Get('meal-plans')
@@ -83,13 +97,13 @@ export class CustomerController {
   }
 
   @Post('meal-plans')
-  createMealPlan(@Body() body: Record<string, unknown>) {
-    return this.customerService.createMealPlan(body as never)
+  createMealPlan(@Body() body: SaveMealPlanDto) {
+    return this.customerService.createMealPlan(body)
   }
 
   @Patch('meal-plans/:id')
-  updateMealPlan(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateMealPlan(Number(id), body as never)
+  updateMealPlan(@Param('id') id: string, @Body() body: SaveMealPlanDto) {
+    return this.customerService.updateMealPlan(Number(id), body)
   }
 
   @Get('meal-calendars')
@@ -98,13 +112,13 @@ export class CustomerController {
   }
 
   @Post('meal-calendars')
-  createMealCalendar(@Body() body: Record<string, unknown>) {
-    return this.customerService.createMealCalendar(body as never)
+  createMealCalendar(@Body() body: SaveMealCalendarDto) {
+    return this.customerService.createMealCalendar(body)
   }
 
   @Patch('meal-calendars/:id')
-  updateMealCalendar(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateMealCalendar(Number(id), body as never)
+  updateMealCalendar(@Param('id') id: string, @Body() body: SaveMealCalendarDto) {
+    return this.customerService.updateMealCalendar(Number(id), body)
   }
 
   @Get('check-ins')
@@ -113,8 +127,8 @@ export class CustomerController {
   }
 
   @Post('check-ins')
-  createCheckIn(@Body() body: Record<string, unknown>) {
-    return this.customerService.createCheckIn(body as never)
+  createCheckIn(@Body() body: CreateCheckInDto) {
+    return this.customerService.createCheckIn(body)
   }
 
   @Get('check-outs')
@@ -123,8 +137,8 @@ export class CustomerController {
   }
 
   @Post('check-outs')
-  createCheckOut(@Body() body: Record<string, unknown>) {
-    return this.customerService.createCheckOut(body as never)
+  createCheckOut(@Body() body: CreateCheckOutDto) {
+    return this.customerService.createCheckOut(body)
   }
 
   @Get('outings')
@@ -133,13 +147,13 @@ export class CustomerController {
   }
 
   @Post('outings')
-  createOuting(@Body() body: Record<string, unknown>) {
-    return this.customerService.createOuting(body as never)
+  createOuting(@Body() body: CreateOutingDto) {
+    return this.customerService.createOuting(body)
   }
 
   @Patch('outings/:id/return')
-  returnOuting(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.returnOuting(Number(id), body as never)
+  returnOuting(@Param('id') id: string, @Body() body: ReturnOutingDto) {
+    return this.customerService.returnOuting(Number(id), body)
   }
 
   @Get('service-targets')
@@ -148,13 +162,13 @@ export class CustomerController {
   }
 
   @Post('service-targets')
-  createServiceTarget(@Body() body: Record<string, unknown>) {
-    return this.customerService.createServiceTarget(body as never)
+  createServiceTarget(@Body() body: SaveServiceTargetDto) {
+    return this.customerService.createServiceTarget(body)
   }
 
   @Patch('service-targets/:id')
-  updateServiceTarget(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateServiceTarget(Number(id), body as never)
+  updateServiceTarget(@Param('id') id: string, @Body() body: SaveServiceTargetDto) {
+    return this.customerService.updateServiceTarget(Number(id), body)
   }
 
   @Get('service-focuses')
@@ -163,12 +177,12 @@ export class CustomerController {
   }
 
   @Post('service-focuses')
-  createServiceFocus(@Body() body: Record<string, unknown>) {
-    return this.customerService.createServiceFocus(body as never)
+  createServiceFocus(@Body() body: SaveServiceFocusDto) {
+    return this.customerService.createServiceFocus(body)
   }
 
   @Patch('service-focuses/:id')
-  updateServiceFocus(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.customerService.updateServiceFocus(Number(id), body as never)
+  updateServiceFocus(@Param('id') id: string, @Body() body: SaveServiceFocusDto) {
+    return this.customerService.updateServiceFocus(Number(id), body)
   }
 }

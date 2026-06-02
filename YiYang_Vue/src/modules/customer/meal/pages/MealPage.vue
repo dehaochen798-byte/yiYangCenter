@@ -113,6 +113,7 @@ import {
   type ResidentItem,
 } from '@/modules/customer/api/customer.api'
 import { formatDate } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type MealPlanForm = {
   id: number | null
@@ -183,6 +184,21 @@ function startEdit(row: MealPlanItem) {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '方案名称', type: 'string', value: form.title },
+    { label: '方案说明', type: 'string', value: form.description, optional: true },
+    { label: '忌口', type: 'string', value: form.dietaryRestrictions, optional: true },
+    { label: '过敏源', type: 'string', value: form.allergens, optional: true },
+    { label: '营养标签', type: 'string', value: form.nutritionTags, optional: true },
+    { label: '开始日期', type: 'datetime', value: form.startDate, optional: true },
+    { label: '结束日期', type: 'datetime', value: form.endDate, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     residentId: form.residentId || undefined,
     title: form.title,

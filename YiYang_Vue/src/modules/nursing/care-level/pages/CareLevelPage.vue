@@ -87,6 +87,7 @@ import {
   updateCareLevel,
   type CareLevelItem,
 } from '@/modules/nursing/api/nursing.api'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type CareLevelForm = {
   id: number | null
@@ -143,6 +144,17 @@ function startEdit(row: CareLevelItem) {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '级别编码', type: 'string', value: form.code },
+    { label: '级别名称', type: 'string', value: form.name },
+    { label: '级别说明', type: 'string', value: form.description, optional: true },
+    { label: '启用状态', type: 'boolean', value: form.isActive },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   const payload = {
     code: form.code,
     name: form.name,

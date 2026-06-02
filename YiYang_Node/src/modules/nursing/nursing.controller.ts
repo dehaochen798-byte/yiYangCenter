@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js'
+import { SaveCareItemDto, SaveCareLevelDto, SaveCareRecordDto } from './dto/nursing.dto.js'
 import { NursingService } from './nursing.service.js'
 
 @Controller('nursing')
@@ -18,13 +19,13 @@ export class NursingController {
   }
 
   @Post('care-levels')
-  createCareLevel(@Body() body: Record<string, unknown>) {
-    return this.nursingService.createCareLevel(body as never)
+  createCareLevel(@Body() body: SaveCareLevelDto) {
+    return this.nursingService.createCareLevel(body)
   }
 
   @Patch('care-levels/:id')
-  updateCareLevel(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.nursingService.updateCareLevel(Number(id), body as never)
+  updateCareLevel(@Param('id') id: string, @Body() body: SaveCareLevelDto) {
+    return this.nursingService.updateCareLevel(Number(id), body)
   }
 
   @Get('care-items')
@@ -33,13 +34,13 @@ export class NursingController {
   }
 
   @Post('care-items')
-  createCareItem(@Body() body: Record<string, unknown>) {
-    return this.nursingService.createCareItem(body as never)
+  createCareItem(@Body() body: SaveCareItemDto) {
+    return this.nursingService.createCareItem(body)
   }
 
   @Patch('care-items/:id')
-  updateCareItem(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.nursingService.updateCareItem(Number(id), body as never)
+  updateCareItem(@Param('id') id: string, @Body() body: SaveCareItemDto) {
+    return this.nursingService.updateCareItem(Number(id), body)
   }
 
   @Get('care-records')
@@ -48,12 +49,12 @@ export class NursingController {
   }
 
   @Post('care-records')
-  createCareRecord(@Body() body: Record<string, unknown>) {
-    return this.nursingService.createCareRecord(body as never)
+  createCareRecord(@Body() body: SaveCareRecordDto) {
+    return this.nursingService.createCareRecord(body)
   }
 
   @Patch('care-records/:id')
-  updateCareRecord(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.nursingService.updateCareRecord(Number(id), body as never)
+  updateCareRecord(@Param('id') id: string, @Body() body: SaveCareRecordDto) {
+    return this.nursingService.updateCareRecord(Number(id), body)
   }
 }

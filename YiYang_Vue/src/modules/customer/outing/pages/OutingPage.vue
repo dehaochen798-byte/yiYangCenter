@@ -116,6 +116,7 @@ import {
   type ResidentItem,
 } from '@/modules/customer/api/customer.api'
 import { formatDateTime } from '@/modules/shared/utils/format'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 const outings = ref<OutingItem[]>([])
 const residents = ref<ResidentItem[]>([])
@@ -158,6 +159,18 @@ async function loadData() {
 }
 
 async function submitForm() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '外出时间', type: 'datetime', value: form.startAt },
+    { label: '预计归院时间', type: 'datetime', value: form.expectedReturnAt, optional: true },
+    { label: '去向', type: 'string', value: form.destination, optional: true },
+    { label: '外出原因', type: 'string', value: form.reason, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
   await createOuting({
     residentId: form.residentId || undefined,
     startAt: form.startAt,

@@ -63,6 +63,7 @@
 import { ElMessage } from 'element-plus'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 import { registerApi } from '../api/auth.api'
 
 const router = useRouter()
@@ -89,6 +90,18 @@ function validateForm() {
 
   if (!form.realName.trim()) {
     ElMessage.warning('请输入真实姓名')
+    return false
+  }
+
+  const valid = validateFieldTypes([
+    { label: '手机号码', type: 'string', value: form.mobile },
+    { label: '登录密码', type: 'string', value: form.password },
+    { label: '真实姓名', type: 'string', value: form.realName },
+    { label: '年龄', type: 'number', value: form.age },
+    { label: '性别', type: 'string', value: form.gender, enumValues: ['MALE', 'FEMALE'] },
+  ])
+
+  if (!valid) {
     return false
   }
 
