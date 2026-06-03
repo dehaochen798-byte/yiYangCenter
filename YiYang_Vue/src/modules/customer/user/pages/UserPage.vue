@@ -9,7 +9,11 @@
   >
     <template #table-actions>
       <div class="table-toolbar">
-        <el-segmented v-model="activeTab" :options="tabOptions" @change="handleTabChange" />
+        <el-segmented
+          v-model="activeTab"
+          :options="tabOptions"
+          @change="handleTabChange"
+        />
         <el-button type="primary" @click="openCreateDialog">
           新建{{ activeTab === 'resident' ? '客户档案' : '员工账号' }}
         </el-button>
@@ -27,14 +31,21 @@
         </el-table-column>
         <el-table-column label="当前状态" min-width="120">
           <template #default="{ row }">
-            <el-tag :type="residentStatusTagMap[row.status as keyof typeof residentStatusTagMap]">
-              {{ residentStatusLabelMap[row.status as keyof typeof residentStatusLabelMap] }}
+            <el-tag
+              :type="
+                residentStatusTagMap[row.status as keyof typeof residentStatusTagMap]
+              "
+            >
+              {{
+                residentStatusLabelMap[row.status as keyof typeof residentStatusLabelMap]
+              }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="床位" min-width="140">
           <template #default="{ row }">
-            {{ row.currentBed?.room?.roomNo || '--' }} / {{ row.currentBed?.bedNo || '--' }}
+            {{ row.currentBed?.room?.roomNo || '--' }} /
+            {{ row.currentBed?.bedNo || '--' }}
           </template>
         </el-table-column>
         <el-table-column label="护理级别" min-width="120">
@@ -49,7 +60,9 @@
         </el-table-column>
         <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
-            <el-button text type="primary" @click="startEditResident(row)">编辑</el-button>
+            <el-button text type="primary" @click="startEditResident(row)"
+              >编辑</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -83,7 +96,6 @@
         </el-table-column>
       </el-table>
     </template>
-
   </CrudPageShell>
 
   <el-dialog
@@ -117,7 +129,12 @@
       <el-row :gutter="12">
         <el-col :span="12">
           <el-form-item label="年龄">
-            <el-input-number v-model="residentForm.age" :min="1" :max="120" class="full-width" />
+            <el-input-number
+              v-model="residentForm.age"
+              :min="1"
+              :max="120"
+              class="full-width"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -152,7 +169,12 @@
         </el-select>
       </el-form-item>
       <el-form-item label="备注">
-        <el-input v-model="residentForm.note" type="textarea" :rows="4" placeholder="可记录病史、偏好等信息" />
+        <el-input
+          v-model="residentForm.note"
+          type="textarea"
+          :rows="4"
+          placeholder="可记录病史、偏好等信息"
+        />
       </el-form-item>
     </el-form>
 
@@ -168,7 +190,12 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="年龄">
-            <el-input-number v-model="userForm.age" :min="18" :max="80" class="full-width" />
+            <el-input-number
+              v-model="userForm.age"
+              :min="18"
+              :max="80"
+              class="full-width"
+            />
           </el-form-item>
         </el-col>
       </el-row>
@@ -403,10 +430,30 @@ async function submitResident() {
     { label: '手机号', type: 'string', value: residentForm.phone },
     { label: '身份证号', type: 'string', value: residentForm.idCard, optional: true },
     { label: '年龄', type: 'number', value: residentForm.age },
-    { label: '性别', type: 'string', value: residentForm.gender, enumValues: ['MALE', 'FEMALE'] },
-    { label: '紧急联系人', type: 'string', value: residentForm.emergencyContactName, optional: true },
-    { label: '联系人电话', type: 'string', value: residentForm.emergencyContactPhone, optional: true },
-    { label: '默认护理级别', type: 'number', value: residentForm.careLevelId, optional: true },
+    {
+      label: '性别',
+      type: 'string',
+      value: residentForm.gender,
+      enumValues: ['MALE', 'FEMALE'],
+    },
+    {
+      label: '紧急联系人',
+      type: 'string',
+      value: residentForm.emergencyContactName,
+      optional: true,
+    },
+    {
+      label: '联系人电话',
+      type: 'string',
+      value: residentForm.emergencyContactPhone,
+      optional: true,
+    },
+    {
+      label: '默认护理级别',
+      type: 'number',
+      value: residentForm.careLevelId,
+      optional: true,
+    },
     { label: '备注', type: 'string', value: residentForm.note, optional: true },
   ])
 
@@ -444,8 +491,18 @@ async function submitUser() {
     { label: '姓名', type: 'string', value: userForm.realName },
     { label: '手机号', type: 'string', value: userForm.mobile },
     { label: '年龄', type: 'number', value: userForm.age },
-    { label: '性别', type: 'string', value: userForm.gender, enumValues: ['MALE', 'FEMALE'] },
-    { label: '状态', type: 'string', value: userForm.status, enumValues: ['ACTIVE', 'DISABLED'] },
+    {
+      label: '性别',
+      type: 'string',
+      value: userForm.gender,
+      enumValues: ['MALE', 'FEMALE'],
+    },
+    {
+      label: '状态',
+      type: 'string',
+      value: userForm.status,
+      enumValues: ['ACTIVE', 'DISABLED'],
+    },
     { label: '岗位', type: 'string', value: userForm.roleName, optional: true },
     { label: '部门', type: 'string', value: userForm.departmentName, optional: true },
   ])
@@ -496,9 +553,9 @@ async function submitUser() {
 
 @media (max-width: 768px) {
   .table-toolbar {
-    width: 100%;
     flex-direction: column;
     align-items: stretch;
+    width: 100%;
   }
 }
 </style>

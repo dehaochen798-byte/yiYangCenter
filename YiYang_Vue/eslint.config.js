@@ -50,4 +50,12 @@ export default [
       'no-console': 'warn',
     },
   },
+  {
+    files: ['src/**/*.{ts,vue}'],
+    rules: {
+      // TypeScript plus auto-imports.d.ts already tracks undefined symbols.
+      // Keeping no-undef on here causes false positives for Vue auto imports.
+      'no-undef': 'off',
+    },
+  },
 ]
