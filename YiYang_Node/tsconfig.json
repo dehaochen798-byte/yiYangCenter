@@ -21,7 +21,8 @@
   "include": [
     "generated/**/*",
     "src/**/*",
-    "prisma/**/*"
+    "prisma/**/*",
+    "tools/**/*"
   ],
   "exclude": [
     "node_modules",

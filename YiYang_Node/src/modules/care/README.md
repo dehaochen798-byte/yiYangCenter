@@ -1,0 +1,2 @@
+# Generated Modules
+- resident-log

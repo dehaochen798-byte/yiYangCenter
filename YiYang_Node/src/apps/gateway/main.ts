@@ -1,8 +1,8 @@
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
-import { GatewayModule } from './apps/gateway/gateway.module.js'
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js'
-import { getGatewayHttpConfig } from './libs/config/service-config.js'
+import { GatewayModule } from './gateway.module.js'
+import { AllExceptionsFilter } from '../../common/filters/all-exceptions.filter.js'
+import { getGatewayHttpConfig } from '../../libs/config/service-config.js'
 
 async function bootstrap() {
   const app = await NestFactory.create(GatewayModule)

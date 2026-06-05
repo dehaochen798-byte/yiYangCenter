@@ -1,3 +1,5 @@
+import { API_BASE_URL } from '@/config/env'
+
 export interface HttpConfig {
   url: string
   method?: string
@@ -7,8 +9,10 @@ export interface HttpConfig {
 }
 
 function buildUrl(url: string, params?: Record<string, unknown>) {
+  const normalizedUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
+
   if (!params || Object.keys(params).length === 0) {
-    return url
+    return normalizedUrl
   }
 
   const searchParams = new URLSearchParams()
@@ -22,7 +26,7 @@ function buildUrl(url: string, params?: Record<string, unknown>) {
   })
 
   const query = searchParams.toString()
-  return query ? `${url}?${query}` : url
+  return query ? `${normalizedUrl}?${query}` : normalizedUrl
 }
 
 function getAuthToken() {
