@@ -43,40 +43,40 @@ enum ServiceFocusStatus {
 }
 
 model User {
-  id                Int             @id @default(autoincrement())
-  mobile            String          @unique @db.VarChar(20)
-  passwordHash      String
-  realName          String          @db.VarChar(50)
-  nickName          String          @db.VarChar(50)
-  age               Int
-  gender            Gender
-  status            UserStatus      @default(ACTIVE)
-  roleName          String?         @db.VarChar(50)
-  departmentName    String?         @db.VarChar(50)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  residents         Resident[]
-  managedTargets    ServiceTarget[] @relation("ServiceManager")
-  careRecords       CareRecord[]
+  id             Int             @id @default(autoincrement())
+  mobile         String          @unique @db.VarChar(20)
+  passwordHash   String
+  realName       String          @db.VarChar(50)
+  nickName       String          @db.VarChar(50)
+  age            Int
+  gender         Gender
+  status         UserStatus      @default(ACTIVE)
+  roleName       String?         @db.VarChar(50)
+  departmentName String?         @db.VarChar(50)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  residents      Resident[]
+  managedTargets ServiceTarget[] @relation("ServiceManager")
+  careRecords    CareRecord[]
 }
 
 model Resident {
-  id                    Int                @id @default(autoincrement())
+  id                    Int             @id @default(autoincrement())
   userId                Int?
-  currentBedId          Int?               @unique
+  currentBedId          Int?            @unique
   careLevelId           Int?
-  fullName              String             @db.VarChar(50)
+  fullName              String          @db.VarChar(50)
   age                   Int
   gender                Gender
-  phone                 String             @unique @db.VarChar(20)
-  idCard                String?            @db.VarChar(30)
-  emergencyContactName  String?            @db.VarChar(50)
-  emergencyContactPhone String?            @db.VarChar(20)
-  status                ResidenceStatus    @default(PENDING)
-  note                  String?            @db.Text
-  user                  User?              @relation(fields: [userId], references: [id])
-  currentBed            Bed?               @relation("ResidentCurrentBed", fields: [currentBedId], references: [id])
-  careLevel             CareLevel?         @relation(fields: [careLevelId], references: [id])
+  phone                 String          @unique @db.VarChar(20)
+  idCard                String?         @db.VarChar(30)
+  emergencyContactName  String?         @db.VarChar(50)
+  emergencyContactPhone String?         @db.VarChar(20)
+  status                ResidenceStatus @default(PENDING)
+  note                  String?         @db.Text
+  user                  User?           @relation(fields: [userId], references: [id])
+  currentBed            Bed?            @relation("ResidentCurrentBed", fields: [currentBedId], references: [id])
+  careLevel             CareLevel?      @relation(fields: [careLevelId], references: [id])
   checkIns              CheckIn[]
   checkOuts             CheckOut[]
   outings               Outing[]
@@ -84,8 +84,8 @@ model Resident {
   serviceTargets        ServiceTarget[]
   serviceFocuses        ServiceFocus[]
   careRecords           CareRecord[]
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 }
 
 model Room {
@@ -103,34 +103,37 @@ model Room {
 }
 
 model Bed {
-  id            Int        @id @default(autoincrement())
-  roomId        Int
-  bedNo         String     @db.VarChar(30)
-  label         String?    @db.VarChar(50)
-  status        BedStatus  @default(VACANT)
-  room          Room       @relation(fields: [roomId], references: [id])
-  currentResident Resident? @relation("ResidentCurrentBed")
-  checkIns      CheckIn[]
-  checkOuts     CheckOut[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id              Int        @id @default(autoincrement())
+  roomId          Int
+  bedNo           String     @db.VarChar(30)
+  label           String?    @db.VarChar(50)
+  status          BedStatus  @default(VACANT)
+  room            Room       @relation(fields: [roomId], references: [id])
+  currentResident Resident?  @relation("ResidentCurrentBed")
+  checkIns        CheckIn[]
+  checkOuts       CheckOut[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  isDelete        Boolean    @default(false)
+  deleteAt        DateTime?
+  deleteVersion   Int        @default(0)
 
-  @@unique([roomId, bedNo])
+  @@unique([roomId, bedNo ,deleteVersion])
 }
 
 model MealPlan {
-  id                   Int      @id @default(autoincrement())
-  residentId           Int
-  title                String   @db.VarChar(100)
-  description          String?  @db.Text
-  dietaryRestrictions  String?  @db.VarChar(255)
-  allergens            String?  @db.VarChar(255)
-  nutritionTags        String?  @db.VarChar(255)
-  startDate            DateTime?
-  endDate              DateTime?
-  resident             Resident @relation(fields: [residentId], references: [id])
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  Int       @id @default(autoincrement())
+  residentId          Int
+  title               String    @db.VarChar(100)
+  description         String?   @db.Text
+  dietaryRestrictions String?   @db.VarChar(255)
+  allergens           String?   @db.VarChar(255)
+  nutritionTags       String?   @db.VarChar(255)
+  startDate           DateTime?
+  endDate             DateTime?
+  resident            Resident  @relation(fields: [residentId], references: [id])
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model MealCalendar {
@@ -150,28 +153,28 @@ model MealCalendar {
 }
 
 model CheckIn {
-  id          Int      @id @default(autoincrement())
-  residentId  Int
-  bedId       Int
-  checkInAt   DateTime
-  note        String?  @db.Text
-  resident    Resident @relation(fields: [residentId], references: [id])
-  bed         Bed      @relation(fields: [bedId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  residentId Int
+  bedId      Int
+  checkInAt  DateTime
+  note       String?  @db.Text
+  resident   Resident @relation(fields: [residentId], references: [id])
+  bed        Bed      @relation(fields: [bedId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model CheckOut {
-  id            Int      @id @default(autoincrement())
-  residentId    Int
-  bedId         Int?
-  checkOutAt    DateTime
-  reason        String?  @db.Text
-  handoverNote  String?  @db.Text
-  resident      Resident @relation(fields: [residentId], references: [id])
-  bed           Bed?     @relation(fields: [bedId], references: [id])
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  residentId   Int
+  bedId        Int?
+  checkOutAt   DateTime
+  reason       String?  @db.Text
+  handoverNote String?  @db.Text
+  resident     Resident @relation(fields: [residentId], references: [id])
+  bed          Bed?     @relation(fields: [bedId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Outing {
@@ -189,31 +192,31 @@ model Outing {
 }
 
 model ServiceTarget {
-  id             Int      @id @default(autoincrement())
-  residentId     Int
-  managerUserId  Int?
-  managerName    String   @db.VarChar(50)
-  managerMobile  String   @db.VarChar(20)
-  startDate      DateTime?
-  endDate        DateTime?
-  relationNote   String?  @db.Text
-  resident       Resident @relation(fields: [residentId], references: [id])
-  managerUser    User?    @relation("ServiceManager", fields: [managerUserId], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            Int       @id @default(autoincrement())
+  residentId    Int
+  managerUserId Int?
+  managerName   String    @db.VarChar(50)
+  managerMobile String    @db.VarChar(20)
+  startDate     DateTime?
+  endDate       DateTime?
+  relationNote  String?   @db.Text
+  resident      Resident  @relation(fields: [residentId], references: [id])
+  managerUser   User?     @relation("ServiceManager", fields: [managerUserId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model ServiceFocus {
-  id              Int                @id @default(autoincrement())
-  residentId      Int
-  serviceName     String             @db.VarChar(100)
-  detail          String?            @db.Text
-  serviceStartAt  DateTime?
-  serviceEndAt    DateTime?
-  status          ServiceFocusStatus @default(ACTIVE)
-  resident        Resident           @relation(fields: [residentId], references: [id])
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  id             Int                @id @default(autoincrement())
+  residentId     Int
+  serviceName    String             @db.VarChar(100)
+  detail         String?            @db.Text
+  serviceStartAt DateTime?
+  serviceEndAt   DateTime?
+  status         ServiceFocusStatus @default(ACTIVE)
+  resident       Resident           @relation(fields: [residentId], references: [id])
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 }
 
 model CareLevel {
@@ -229,30 +232,30 @@ model CareLevel {
 }
 
 model CareItem {
-  id              Int        @id @default(autoincrement())
+  id              Int          @id @default(autoincrement())
   careLevelId     Int
-  name            String     @db.VarChar(100)
-  description     String?    @db.Text
-  frequency       String?    @db.VarChar(50)
+  name            String       @db.VarChar(100)
+  description     String?      @db.Text
+  frequency       String?      @db.VarChar(50)
   durationMinutes Int?
-  instructions    String?    @db.Text
-  isActive        Boolean    @default(true)
-  careLevel       CareLevel  @relation(fields: [careLevelId], references: [id])
+  instructions    String?      @db.Text
+  isActive        Boolean      @default(true)
+  careLevel       CareLevel    @relation(fields: [careLevelId], references: [id])
   records         CareRecord[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 model CareRecord {
-  id          Int      @id @default(autoincrement())
-  residentId  Int
-  careItemId  Int
-  operatorId  Int
-  executedAt  DateTime
-  note        String?  @db.Text
-  resident    Resident @relation(fields: [residentId], references: [id])
-  careItem    CareItem @relation(fields: [careItemId], references: [id])
-  operator    User     @relation(fields: [operatorId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  residentId Int
+  careItemId Int
+  operatorId Int
+  executedAt DateTime
+  note       String?  @db.Text
+  resident   Resident @relation(fields: [residentId], references: [id])
+  careItem   CareItem @relation(fields: [careItemId], references: [id])
+  operator   User     @relation(fields: [operatorId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

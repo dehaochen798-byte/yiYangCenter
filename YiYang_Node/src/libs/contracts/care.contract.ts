@@ -1,3 +1,4 @@
+// 全局消息路由映射表
 export const CARE_PATTERNS = {
   dashboardSummary: { cmd: 'care.dashboard.summary' },
   customerModules: { cmd: 'care.customer.modules' },
@@ -14,6 +15,7 @@ export const CARE_PATTERNS = {
   bedsList: { cmd: 'care.customer.beds.list' },
   bedsCreate: { cmd: 'care.customer.beds.create' },
   bedsUpdate: { cmd: 'care.customer.beds.update' },
+  bedsDelete: { cmd: 'care.customer.beds.delete' },
   mealPlansList: { cmd: 'care.customer.meal-plans.list' },
   mealPlansCreate: { cmd: 'care.customer.meal-plans.create' },
   mealPlansUpdate: { cmd: 'care.customer.meal-plans.update' },

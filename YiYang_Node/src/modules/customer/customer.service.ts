@@ -1,6 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { hash } from 'bcryptjs'
-import { BedStatus, Gender, OutingStatus, ResidenceStatus, ServiceFocusStatus, UserStatus } from '../../../generated/prisma/enums.js'
+import {
+  BedStatus,
+  Gender,
+  OutingStatus,
+  ResidenceStatus,
+  ServiceFocusStatus,
+  UserStatus,
+} from '../../../generated/prisma/enums.js'
 import { PrismaService } from '../../prisma/prisma.service.js'
 import type {
   CreateCheckInDto,
@@ -59,11 +66,13 @@ export class CustomerService {
         this.prisma.bed.count({
           where: {
             status: BedStatus.OCCUPIED,
+            isDelete: false,
           },
         }),
         this.prisma.bed.count({
           where: {
             status: BedStatus.VACANT,
+            isDelete: false,
           },
         }),
       ])
@@ -303,6 +312,7 @@ export class CustomerService {
           include: {
             currentResident: true,
           },
+          where: { isDelete: false },
         },
       },
     })
@@ -361,6 +371,7 @@ export class CustomerService {
         room: true,
         currentResident: true,
       },
+      where: { isDelete: false },
     })
 
     return {
@@ -427,12 +438,50 @@ export class CustomerService {
       },
     })
 
-    await Promise.all([this.refreshRoomBedCount(current.roomId), this.refreshRoomBedCount(payload.roomId)])
+    await Promise.all([
+      this.refreshRoomBedCount(current.roomId),
+      this.refreshRoomBedCount(payload.roomId),
+    ])
 
     return {
       code: 200,
       message: '床位更新成功',
       data: bed,
+    }
+  }
+
+  async deleteBed(id: number) {
+    const current = await this.prisma.bed.findUnique({
+      where: { id },
+      include: { currentResident: true },
+    })
+
+    if (!current) {
+      throw new NotFoundException('床位不存在')
+    }
+
+    if (current.isDelete) {
+      throw new BadRequestException('不允许重复删除，请尝试清理缓存或者联系管理员')
+    }
+
+    if (current.currentResident) {
+      throw new BadRequestException('该床位已有入住客户，不能删除')
+    }
+
+    const bed = await this.prisma.bed.update({
+      where: { id },
+      data: {
+        isDelete: true,
+        deleteAt: new Date(),
+        deleteVersion: id,
+      },
+    })
+
+    await this.refreshRoomBedCount(current.roomId)
+
+    return {
+      code: 200,
+      message: '床位删除成功',
     }
   }
 
@@ -1040,7 +1089,7 @@ export class CustomerService {
       where: { id },
     })
 
-    if (!bed) {
+    if (!bed || bed?.isDelete) {
       throw new NotFoundException('床位不存在')
     }
 
@@ -1065,6 +1114,7 @@ export class CustomerService {
     const count = await this.prisma.bed.count({
       where: {
         roomId,
+        isDelete: false,
       },
     })
 

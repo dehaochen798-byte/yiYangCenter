@@ -280,7 +280,7 @@ async function main() {
 
     const [bed201A, bed201B, bed202A, bed202B, bed301A] = await Promise.all([
       prisma.bed.upsert({
-        where: { roomId_bedNo: { roomId: room201.id, bedNo: 'A床' } },
+        where: { roomId_bedNo_deleteVersion: { roomId: room201.id, bedNo: 'A床', deleteVersion: 0 } },
         update: {
           label: '靠窗',
           status: BedStatus.OCCUPIED,
@@ -293,7 +293,7 @@ async function main() {
         },
       }),
       prisma.bed.upsert({
-        where: { roomId_bedNo: { roomId: room201.id, bedNo: 'B床' } },
+        where: { roomId_bedNo_deleteVersion: { roomId: room201.id, bedNo: 'B床', deleteVersion: 0 } },
         update: {
           label: '近门',
           status: BedStatus.VACANT,
@@ -306,7 +306,7 @@ async function main() {
         },
       }),
       prisma.bed.upsert({
-        where: { roomId_bedNo: { roomId: room202.id, bedNo: 'A床' } },
+        where: { roomId_bedNo_deleteVersion: { roomId: room202.id, bedNo: 'A床', deleteVersion: 0 } },
         update: {
           label: '康复位',
           status: BedStatus.OCCUPIED,
@@ -319,7 +319,7 @@ async function main() {
         },
       }),
       prisma.bed.upsert({
-        where: { roomId_bedNo: { roomId: room202.id, bedNo: 'B床' } },
+        where: { roomId_bedNo_deleteVersion: { roomId: room202.id, bedNo: 'B床', deleteVersion: 0 } },
         update: {
           label: '普通位',
           status: BedStatus.VACANT,
@@ -332,7 +332,7 @@ async function main() {
         },
       }),
       prisma.bed.upsert({
-        where: { roomId_bedNo: { roomId: room301.id, bedNo: 'A床' } },
+        where: { roomId_bedNo_deleteVersion: { roomId: room301.id, bedNo: 'A床', deleteVersion: 0 } },
         update: {
           label: '重点护理位',
           status: BedStatus.DISABLED,

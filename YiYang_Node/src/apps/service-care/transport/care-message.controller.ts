@@ -107,6 +107,11 @@ export class CareMessageController {
     return this.customerService.updateBed(payload.id, payload.data)
   }
 
+  @MessagePattern(CARE_PATTERNS.bedsDelete)
+  deleteBed(payload: { id: number }) {
+    return this.customerService.deleteBed(payload.id)
+  }
+
   @MessagePattern(CARE_PATTERNS.mealPlansList)
   listMealPlans() {
     return this.customerService.listMealPlans()

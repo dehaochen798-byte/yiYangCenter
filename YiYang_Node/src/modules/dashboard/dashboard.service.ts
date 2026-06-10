@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { BedStatus, OutingStatus, ResidenceStatus, ServiceFocusStatus } from '../../../generated/prisma/enums.js'
+import {
+  BedStatus,
+  OutingStatus,
+  ResidenceStatus,
+  ServiceFocusStatus,
+} from '../../../generated/prisma/enums.js'
 import { PrismaService } from '../../prisma/prisma.service.js'
 
 function startOfToday() {
@@ -51,16 +56,19 @@ export class DashboardService {
       this.prisma.bed.count({
         where: {
           status: BedStatus.VACANT,
+          isDelete: false,
         },
       }),
       this.prisma.bed.count({
         where: {
           status: BedStatus.OCCUPIED,
+          isDelete: false,
         },
       }),
       this.prisma.bed.count({
         where: {
           status: BedStatus.DISABLED,
+          isDelete: false,
         },
       }),
       this.prisma.careRecord.count({
@@ -145,6 +153,9 @@ export class DashboardService {
               id: true,
               status: true,
             },
+            where: {
+              isDelete: false,
+            },
           },
         },
       }),
@@ -177,9 +188,11 @@ export class DashboardService {
           floor: item.floor,
           roomType: item.roomType,
           bedCount: item.bedCount,
-          occupiedCount: item.beds.filter((bed) => bed.status === BedStatus.OCCUPIED).length,
+          occupiedCount: item.beds.filter((bed) => bed.status === BedStatus.OCCUPIED)
+            .length,
           vacantCount: item.beds.filter((bed) => bed.status === BedStatus.VACANT).length,
-          disabledCount: item.beds.filter((bed) => bed.status === BedStatus.DISABLED).length,
+          disabledCount: item.beds.filter((bed) => bed.status === BedStatus.DISABLED)
+            .length,
         })),
       },
     }

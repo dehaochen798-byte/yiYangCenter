@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+  Delete,
+} from '@nestjs/common'
 import type { ClientProxy } from '@nestjs/microservices'
 import { GatewayJwtGuard } from '../security/gateway-jwt.guard.js'
 import { sendTcpMessage } from '../../../libs/microservices/client-proxy.util.js'
@@ -103,6 +113,11 @@ export class CustomerController {
       id: Number(id),
       data: body,
     })
+  }
+
+  @Delete('beds/:id')
+  deleteBed(@Param('id') id: string) {
+    return sendTcpMessage(this.careClient, CARE_PATTERNS.bedsDelete, { id: Number(id) })
   }
 
   @Get('meal-plans')
