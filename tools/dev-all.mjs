@@ -1,40 +1,49 @@
 import { spawn } from 'node:child_process'
-import { backendPorts, findListeningProcesses, formatPortConflicts } from './dev-port-utils.mjs'
 
-const workspace = 'YiYang_Node'
 const services = [
   {
-    name: 'gateway',
-    script: 'start:gateway:dev',
+    name: 'vue',
+    command: 'npm',
+    args: ['run', 'dev:vue'],
+    color: '\x1b[32m',
+  },
+  {
+    name: 'node',
+    command: 'npm',
+    args: ['run', 'dev:node'],
     color: '\x1b[36m',
-  },
-  {
-    name: 'service-auth',
-    script: 'start:service-auth:dev',
-    color: '\x1b[33m',
-  },
-  {
-    name: 'service-care',
-    script: 'start:service-care:dev',
-    color: '\x1b[35m',
   },
 ]
 
 const resetColor = '\x1b[0m'
 const children = new Set()
-const existingListeners = findListeningProcesses(backendPorts)
+let shuttingDown = false
+let hasPrintedVueUrl = false
 
-if (existingListeners.length) {
-  process.stderr.write('[dev:node] Backend dev ports are already in use:\n')
-  process.stderr.write(`${formatPortConflicts(existingListeners)}\n`)
-  process.stderr.write('[dev:node] Run "npm run dev:kill" or "npm run dev:reset" and try again.\n')
-  process.exit(1)
+function stripAnsi(text) {
+  return text.replace(/\x1B\[[0-9;]*m/g, '')
 }
 
 function stripTerminalControl(text) {
   return text
     .replace(/\x1Bc/g, '')
     .replace(/\x1B\[[0-9;?]*[JKHf]/g, '')
+}
+
+function printVueAccessHint(line) {
+  if (hasPrintedVueUrl) {
+    return
+  }
+
+  const normalizedLine = stripAnsi(line)
+  const match = normalizedLine.match(/Local:\s+(http:\/\/[^\s]+)/)
+
+  if (!match) {
+    return
+  }
+
+  hasPrintedVueUrl = true
+  process.stdout.write(`\n${services[0].color}[tip]${resetColor} Frontend ready: ${match[1]}\n\n`)
 }
 
 function prefixOutput(serviceName, color, stream) {
@@ -50,23 +59,35 @@ function prefixOutput(serviceName, color, stream) {
         continue
       }
 
-      process.stdout.write(`${color}[${serviceName}]${resetColor} ${stripTerminalControl(line)}\n`)
+      const normalizedLine = stripTerminalControl(line)
+
+      if (serviceName === 'vue') {
+        printVueAccessHint(normalizedLine)
+      }
+
+      process.stdout.write(`${color}[${serviceName}]${resetColor} ${normalizedLine}\n`)
     }
   })
 
   stream.on('end', () => {
     if (buffer) {
-      process.stdout.write(`${color}[${serviceName}]${resetColor} ${stripTerminalControl(buffer)}\n`)
+      const normalizedBuffer = stripTerminalControl(buffer)
+
+      if (serviceName === 'vue') {
+        printVueAccessHint(normalizedBuffer)
+      }
+
+      process.stdout.write(`${color}[${serviceName}]${resetColor} ${normalizedBuffer}\n`)
     }
   })
 }
 
 function spawnService(service) {
-  const command = process.platform === 'win32' ? 'cmd.exe' : 'npm'
+  const command = process.platform === 'win32' ? 'cmd.exe' : service.command
   const args =
     process.platform === 'win32'
-      ? ['/d', '/s', '/c', `npm run ${service.script} -w ${workspace}`]
-      : ['run', service.script, '-w', workspace]
+      ? ['/d', '/s', '/c', `${service.command} ${service.args.join(' ')}`]
+      : service.args
 
   const child = spawn(command, args, {
     cwd: process.cwd(),
@@ -93,8 +114,6 @@ function spawnService(service) {
     }
   })
 }
-
-let shuttingDown = false
 
 function shutdown(exitCode = 0) {
   if (shuttingDown) {

@@ -109,6 +109,19 @@ npm run dev:node
 
 - `http://localhost:3000/api/health`
 
+### 一键启动前后端
+
+在仓库根目录执行：
+
+```bash
+npm run dev
+```
+
+会并行启动：
+
+- 后端三服务
+- 前端 Vite 开发服务
+
 ### 启动前端
 
 另开一个终端：
@@ -126,6 +139,7 @@ npm run dev:vue
 ```bash
 npm run dev:node
 npm run dev:vue
+npm run dev
 npm run build
 npm run lint
 npm run format

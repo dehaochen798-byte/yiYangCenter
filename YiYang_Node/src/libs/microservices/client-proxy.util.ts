@@ -6,5 +6,9 @@ export async function sendTcpMessage<TResponse, TPayload>(
   pattern: unknown,
   payload: TPayload
 ) {
-  return firstValueFrom(client.send<TResponse, TPayload>(pattern, payload).pipe(timeout(5000)))
+  const normalizedPayload = payload === undefined ? {} : payload
+
+  return firstValueFrom(
+    client.send<TResponse, TPayload | Record<string, never>>(pattern, normalizedPayload).pipe(timeout(5000))
+  )
 }
