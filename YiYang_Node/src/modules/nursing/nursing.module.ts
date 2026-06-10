@@ -5,5 +5,6 @@ import { NursingService } from './nursing.service.js'
 @Module({
   controllers: [NursingController],
   providers: [NursingService],
+  exports: [NursingService],
 })
 export class NursingModule {}
