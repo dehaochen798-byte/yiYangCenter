@@ -61,9 +61,10 @@ export async function http<T = unknown>(config: HttpConfig) {
   const { url, method = 'GET', data, params, headers = {} } = config
   const requestUrl = buildUrl(url, params)
   const token = getAuthToken()
+  const normalizedMethod = method.toUpperCase()
 
   const response = await fetch(requestUrl, {
-    method,
+    method: normalizedMethod,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

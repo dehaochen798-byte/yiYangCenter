@@ -184,7 +184,7 @@ import {
   updateRoom,
   type BedItem,
   type RoomItem,
-} from '@/modules/customer/api/customer.api'
+} from '@/modules/customer/bed/api'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
 type RoomForm = {

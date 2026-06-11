@@ -110,11 +110,10 @@ import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createOuting,
   getOutings,
-  getResidents,
   returnOuting,
   type OutingItem,
-  type ResidentItem,
-} from '@/modules/customer/api/customer.api'
+} from '@/modules/customer/outing/api'
+import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDateTime } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 

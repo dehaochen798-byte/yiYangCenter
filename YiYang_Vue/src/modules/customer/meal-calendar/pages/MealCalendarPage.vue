@@ -84,7 +84,7 @@ import {
   getMealCalendars,
   updateMealCalendar,
   type MealCalendarItem,
-} from '@/modules/customer/api/customer.api'
+} from '@/modules/customer/meal-calendar/api'
 import { formatDate } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 

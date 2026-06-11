@@ -82,10 +82,9 @@ import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createCheckOut,
   getCheckOuts,
-  getResidents,
   type CheckOutItem,
-  type ResidentItem,
-} from '@/modules/customer/api/customer.api'
+} from '@/modules/customer/check-out/api'
+import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDateTime } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 

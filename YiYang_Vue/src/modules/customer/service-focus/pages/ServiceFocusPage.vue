@@ -103,12 +103,11 @@ import { ElMessage } from 'element-plus'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createServiceFocus,
-  getResidents,
   getServiceFocuses,
   updateServiceFocus,
-  type ResidentItem,
   type ServiceFocusItem,
-} from '@/modules/customer/api/customer.api'
+} from '@/modules/customer/service-focus/api'
+import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDate } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 

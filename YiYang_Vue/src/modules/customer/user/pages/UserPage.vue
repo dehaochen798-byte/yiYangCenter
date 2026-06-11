@@ -262,9 +262,9 @@ import {
   updateResident,
   updateUser,
   type ResidentItem,
-  type ResidenceStatus,
   type UserItem,
-} from '@/modules/customer/api/customer.api'
+} from '@/modules/customer/user/api'
+import type { ResidenceStatus } from '@/modules/customer/api/shared.types'
 import { getCareLevels, type CareLevelItem } from '@/modules/nursing/api/nursing.api'
 import { formatDateTime, mapGenderLabel } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'

@@ -85,15 +85,9 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
-import {
-  createCheckIn,
-  getBeds,
-  getCheckIns,
-  getResidents,
-  type BedItem,
-  type CheckInItem,
-  type ResidentItem,
-} from '@/modules/customer/api/customer.api'
+import { getBeds, type BedItem } from '@/modules/customer/bed/api'
+import { createCheckIn, getCheckIns, type CheckInItem } from '@/modules/customer/check-in/api'
+import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDateTime } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 

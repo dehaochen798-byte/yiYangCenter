@@ -107,11 +107,10 @@ import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createMealPlan,
   getMealPlans,
-  getResidents,
   updateMealPlan,
   type MealPlanItem,
-  type ResidentItem,
-} from '@/modules/customer/api/customer.api'
+} from '@/modules/customer/meal/api'
+import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDate } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
