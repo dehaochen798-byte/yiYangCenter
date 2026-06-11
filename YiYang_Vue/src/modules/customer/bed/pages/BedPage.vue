@@ -426,9 +426,9 @@ async function submitBed() {
 
 @media (max-width: 768px) {
   .table-toolbar {
-    width: 100%;
     flex-direction: column;
     align-items: stretch;
+    width: 100%;
   }
 }
 </style>
