@@ -1,5 +1,5 @@
 <template>
-  <div class="dashboard-page" v-loading="loading">
+  <div v-loading="loading" class="dashboard-page">
     <el-card shadow="never" class="dashboard-page__hero">
       <div class="dashboard-page__hero-content">
         <div>
@@ -28,13 +28,7 @@
     </el-card>
 
     <el-row :gutter="18">
-      <el-col
-        v-for="card in summaryCards"
-        :key="card.title"
-        :xs="24"
-        :sm="12"
-        :xl="6"
-      >
+      <el-col v-for="card in summaryCards" :key="card.title" :xs="24" :sm="12" :xl="6">
         <el-card shadow="never" class="dashboard-page__metric-card">
           <span>{{ card.title }}</span>
           <strong>{{ card.value }}</strong>
@@ -71,7 +65,11 @@
           </template>
 
           <div class="dashboard-page__attention-list">
-            <div v-for="item in attentionItems" :key="item.title" class="dashboard-page__attention-item">
+            <div
+              v-for="item in attentionItems"
+              :key="item.title"
+              class="dashboard-page__attention-item"
+            >
               <div>
                 <strong>{{ item.title }}</strong>
                 <p>{{ item.description }}</p>
@@ -226,7 +224,10 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ISpec } from '@visactor/vchart'
-import { getDashboardSummary, type DashboardData } from '@/modules/dashboard/api/dashboard.api'
+import {
+  getDashboardSummary,
+  type DashboardData,
+} from '@/modules/dashboard/api/dashboard.api'
 import VChartPanel from '@/modules/dashboard/components/VChartPanel.vue'
 import { formatDateTime } from '@/modules/shared/utils/format'
 
@@ -529,10 +530,10 @@ onMounted(async () => {
   &__hero,
   &__card,
   &__metric-card {
+    background: var(--yy-color-surface);
     border: 1px solid var(--yy-color-border);
     border-radius: var(--yy-radius-lg);
     box-shadow: var(--yy-shadow-card);
-    background: var(--yy-color-surface);
   }
 
   &__hero {
@@ -566,15 +567,15 @@ onMounted(async () => {
     margin: 0 0 10px;
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.14em;
     color: var(--yy-color-primary);
     text-transform: uppercase;
+    letter-spacing: 0.14em;
   }
 
   &__hero-badges {
     display: flex;
-    gap: 12px;
     flex-wrap: wrap;
+    gap: 12px;
   }
 
   &__badge {
@@ -701,9 +702,9 @@ onMounted(async () => {
     }
 
     &:hover {
-      transform: translateY(-2px);
       border-color: rgb(63 124 102 / 24%);
       box-shadow: 0 14px 30px rgb(74 115 94 / 10%);
+      transform: translateY(-2px);
     }
   }
 
