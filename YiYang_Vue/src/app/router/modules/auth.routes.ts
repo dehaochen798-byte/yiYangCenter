@@ -35,6 +35,14 @@ export const authRoutes: RouteRecordRaw[] = [
           title: 'JS 测试页',
         },
       },
+      {
+        path: 'text1',
+        name: 'text1',
+        component: () => import('@/modules/system/pages/text1.vue'),
+        meta: {
+          title: '手搓简单事件',
+        },
+      },
     ],
   },
 ]
