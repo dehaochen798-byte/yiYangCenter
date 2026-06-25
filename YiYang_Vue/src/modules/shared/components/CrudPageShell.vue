@@ -67,10 +67,10 @@ defineProps<{
 
   &__hero,
   &__card {
+    background: var(--yy-color-surface);
     border: 1px solid var(--yy-color-border);
     border-radius: var(--yy-radius-lg);
     box-shadow: var(--yy-shadow-card);
-    background: var(--yy-color-surface);
   }
 
   &__hero {
@@ -104,9 +104,9 @@ defineProps<{
     margin: 0 0 10px;
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.14em;
     color: var(--yy-color-primary);
     text-transform: uppercase;
+    letter-spacing: 0.14em;
   }
 
   &__content {
