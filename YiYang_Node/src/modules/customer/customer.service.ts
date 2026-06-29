@@ -382,12 +382,19 @@ export class CustomerService {
   }
 
   async createBed(payload: SaveBedDto) {
+    const bedNo = payload.bedNo.trim()
+
+    if (!bedNo) {
+      throw new BadRequestException('床位编号不能为空')
+    }
+
     const room = await this.ensureRoomExists(payload.roomId)
+    await this.ensureBedNoAvailable(payload.roomId, bedNo)
 
     const bed = await this.prisma.bed.create({
       data: {
         roomId: payload.roomId,
-        bedNo: payload.bedNo.trim(),
+        bedNo,
         label: normalizeText(payload.label),
         status: payload.status ?? BedStatus.VACANT,
       },
@@ -407,6 +414,12 @@ export class CustomerService {
   }
 
   async updateBed(id: number, payload: SaveBedDto) {
+    const bedNo = payload.bedNo.trim()
+
+    if (!bedNo) {
+      throw new BadRequestException('床位编号不能为空')
+    }
+
     const current = await this.prisma.bed.findUnique({
       where: { id },
       include: {
@@ -419,6 +432,7 @@ export class CustomerService {
     }
 
     await this.ensureRoomExists(payload.roomId)
+    await this.ensureBedNoAvailable(payload.roomId, bedNo, id)
 
     if (current.currentResident && payload.status === BedStatus.VACANT) {
       throw new BadRequestException('该床位已有入住客户，不能直接改为空床')
@@ -428,7 +442,7 @@ export class CustomerService {
       where: { id },
       data: {
         roomId: payload.roomId,
-        bedNo: payload.bedNo.trim(),
+        bedNo,
         label: normalizeText(payload.label),
         status: payload.status ?? current.status,
       },
@@ -1094,6 +1108,23 @@ export class CustomerService {
     }
 
     return bed
+  }
+
+  private async ensureBedNoAvailable(roomId: number, bedNo: string, currentBedId?: number) {
+    const existing = await this.prisma.bed.findFirst({
+      where: {
+        roomId,
+        bedNo,
+        isDelete: false,
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (existing && existing.id !== currentBedId) {
+      throw new BadRequestException('该房间已存在相同床位编号')
+    }
   }
 
   private async ensureManagerExists(id?: number | null) {
