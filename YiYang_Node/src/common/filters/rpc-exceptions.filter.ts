@@ -1,6 +1,7 @@
 import { Catch, HttpException, HttpStatus } from '@nestjs/common'
 import { RpcException } from '@nestjs/microservices'
 import { throwError } from 'rxjs'
+import { Prisma } from '../../../generated/prisma/client.js'
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common'
 
 @Catch()
@@ -18,6 +19,12 @@ export class RpcExceptionsFilter implements ExceptionFilter {
             message: extractHttpExceptionMessage(exception),
           })
       )
+    }
+
+    const prismaExceptionPayload = getPrismaExceptionPayload(exception)
+
+    if (prismaExceptionPayload) {
+      return throwError(() => new RpcException(prismaExceptionPayload))
     }
 
     return throwError(
@@ -52,4 +59,40 @@ function extractHttpExceptionMessage(exception: HttpException) {
   }
 
   return exception.message
+}
+
+function getPrismaExceptionPayload(exception: unknown) {
+  if (!(exception instanceof Prisma.PrismaClientKnownRequestError)) {
+    return null
+  }
+
+  switch (exception.code) {
+    case 'P2000':
+      return {
+        code: HttpStatus.BAD_REQUEST,
+        message: '字段内容超出长度限制',
+      }
+    case 'P2002':
+      return {
+        code: HttpStatus.BAD_REQUEST,
+        message: '数据已存在，请检查唯一字段',
+      }
+    case 'P2003':
+      return {
+        code: HttpStatus.BAD_REQUEST,
+        message: '关联数据不存在或已被使用',
+      }
+    case 'P2011':
+      return {
+        code: HttpStatus.BAD_REQUEST,
+        message: '必填字段不能为空',
+      }
+    case 'P2025':
+      return {
+        code: HttpStatus.NOT_FOUND,
+        message: '数据不存在',
+      }
+    default:
+      return null
+  }
 }
