@@ -8,33 +8,44 @@ import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common'
 export class RpcExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, _host: ArgumentsHost) {
     if (exception instanceof RpcException) {
-      return throwError(() => exception)
+      return throwError(() => getRpcExceptionPayload(exception))
     }
 
     if (exception instanceof HttpException) {
       return throwError(
-        () =>
-          new RpcException({
-            code: exception.getStatus(),
-            message: extractHttpExceptionMessage(exception),
-          })
+        () => ({
+          code: exception.getStatus(),
+          message: extractHttpExceptionMessage(exception),
+        })
       )
     }
 
     const prismaExceptionPayload = getPrismaExceptionPayload(exception)
 
     if (prismaExceptionPayload) {
-      return throwError(() => new RpcException(prismaExceptionPayload))
+      return throwError(() => prismaExceptionPayload)
     }
 
     return throwError(
-      () =>
-        new RpcException({
-          code: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Internal server error',
-        })
+      () => ({
+        code: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Internal server error',
+      })
     )
   }
+}
+
+function getRpcExceptionPayload(exception: RpcException) {
+  const error = exception.getError()
+
+  if (typeof error === 'string') {
+    return {
+      code: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: error,
+    }
+  }
+
+  return error
 }
 
 function extractHttpExceptionMessage(exception: HttpException) {

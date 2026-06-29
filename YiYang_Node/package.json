@@ -20,6 +20,7 @@
     "start:service-auth:dev": "node --watch --loader ts-node/esm src/apps/service-auth/main.ts",
     "start:service-care": "node --loader ts-node/esm src/apps/service-care/main.ts",
     "start:service-care:dev": "node --watch --loader ts-node/esm src/apps/service-care/main.ts",
+    "test": "node --loader ts-node/esm --test \"test/**/*.spec.ts\"",
     "lint": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" \"prisma/**/*.ts\" --fix",
     "format": "prettier . --write",

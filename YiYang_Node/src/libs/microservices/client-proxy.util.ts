@@ -26,25 +26,59 @@ function getRpcErrorPayload(error: unknown) {
     return null
   }
 
-  const payload = error as { code?: unknown; message?: unknown; error?: unknown }
-
-  if (typeof payload.code === 'number' || typeof payload.message === 'string') {
-    return payload
+  const payload = error as {
+    code?: unknown
+    error?: unknown
+    message?: unknown
+    status?: unknown
+    statusCode?: unknown
   }
 
-  if (payload.message && typeof payload.message === 'object') {
-    const nestedPayload = payload.message as { code?: unknown; message?: unknown }
+  const errorPayload = getPayloadObject(payload.error)
 
-    return nestedPayload
+  if (errorPayload) {
+    return errorPayload
   }
 
-  if (payload.error && typeof payload.error === 'object') {
-    const nestedPayload = payload.error as { code?: unknown; message?: unknown }
+  const messagePayload = getPayloadObject(payload.message)
 
-    return nestedPayload
+  if (messagePayload) {
+    return messagePayload
+  }
+
+  if (
+    typeof payload.code === 'number' ||
+    typeof payload.statusCode === 'number' ||
+    typeof payload.status === 'string'
+  ) {
+    return {
+      code: payload.code ?? payload.statusCode,
+      message: typeof payload.message === 'string' ? payload.message : undefined,
+    }
   }
 
   return null
+}
+
+function getPayloadObject(value: unknown) {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const payload = value as { code?: unknown; message?: unknown; statusCode?: unknown }
+
+  if (
+    typeof payload.code !== 'number' &&
+    typeof payload.statusCode !== 'number' &&
+    typeof payload.message !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    code: payload.code ?? payload.statusCode,
+    message: payload.message,
+  }
 }
 
 function getHttpStatus(code: unknown) {
