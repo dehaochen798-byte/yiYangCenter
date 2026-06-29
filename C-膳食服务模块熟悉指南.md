@@ -50,6 +50,21 @@ C 组负责客户的膳食和服务信息：
 膳食/服务页面 -> 对应 api.ts -> /api/customer/... -> gateway -> CustomerService -> Prisma -> MySQL
 ```
 
+## 接口错误怎么返回
+
+膳食与服务模块里，客户或健康管家不存在时，service 会抛出 `NotFoundException`；参数或业务状态不允许时，会抛出 `BadRequestException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 再通过 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+
+```json
+{
+  "code": 400,
+  "message": "错误原因",
+  "path": "/api/customer/...",
+  "timestamp": "..."
+}
+```
+
+如果漏掉了业务提前校验，Prisma 的常见数据库异常也会兜底转换，比如唯一约束冲突会返回 400，记录不存在会返回 404。
+
 ## 主要接口
 
 膳食方案：

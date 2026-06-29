@@ -44,7 +44,7 @@ A 组负责客户管理里最基础的资源部分：
 5. gateway 不直接查数据库，而是把消息转给后端服务。
 6. 后端服务进入 `modules/customer/customer.controller.ts`。
 7. controller 调用 `CustomerService.createBed()`。
-8. service 使用 Prisma 写入 `Bed` 表。
+8. service 先校验房间是否存在、床位编号是否重复，再使用 Prisma 写入 `Bed` 表。
 9. 创建后调用 `refreshRoomBedCount()`，刷新房间床位数量。
 10. 数据返回前端，页面刷新列表。
 
@@ -53,6 +53,21 @@ A 组负责客户管理里最基础的资源部分：
 ```txt
 Vue 页面 -> 前端 API -> request/http -> gateway -> customer controller -> customer service -> Prisma -> MySQL
 ```
+
+## 接口错误怎么返回
+
+业务校验失败时，后端会抛出 `BadRequestException` 或 `NotFoundException`，例如重复创建同房间的同名床位会返回“该房间已存在相同床位编号”。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 再通过 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+
+```json
+{
+  "code": 400,
+  "message": "该房间已存在相同床位编号",
+  "path": "/api/customer/beds",
+  "timestamp": "..."
+}
+```
+
+如果漏掉了业务提前校验，Prisma 的常见数据库异常也会兜底转换，比如唯一约束冲突会返回 400，记录不存在会返回 404。
 
 ## 主要接口
 

@@ -90,6 +90,21 @@ D 组负责三块内容：
 退住：创建退住记录 + 客户变退住 + 床位变空床
 ```
 
+## 接口错误怎么返回
+
+登录、入住、退住等接口出现业务错误时，service 会抛出 `BadRequestException`、`UnauthorizedException` 或 `NotFoundException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 再通过 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+
+```json
+{
+  "code": 400,
+  "message": "错误原因",
+  "path": "/api/...",
+  "timestamp": "..."
+}
+```
+
+如果漏掉了业务提前校验，Prisma 的常见数据库异常也会兜底转换，比如唯一约束冲突会返回 400，记录不存在会返回 404。
+
 ## 主要接口
 
 认证：

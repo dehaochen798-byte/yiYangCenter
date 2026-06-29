@@ -46,6 +46,21 @@ B 组负责护理模块：
 护理页面 -> nursing.api.ts -> /api/nursing/... -> gateway -> NursingService -> Prisma -> MySQL
 ```
 
+## 接口错误怎么返回
+
+护理模块里，客户、护理内容或执行员工不存在时，service 会抛出 `NotFoundException`；参数或业务状态不允许时，会抛出 `BadRequestException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 再通过 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+
+```json
+{
+  "code": 400,
+  "message": "错误原因",
+  "path": "/api/nursing/...",
+  "timestamp": "..."
+}
+```
+
+如果漏掉了业务提前校验，Prisma 的常见数据库异常也会兜底转换，比如唯一约束冲突会返回 400，记录不存在会返回 404。
+
 ## 主要接口
 
 模块信息：
