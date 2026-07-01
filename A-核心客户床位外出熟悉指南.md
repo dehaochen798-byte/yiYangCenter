@@ -57,6 +57,32 @@ A 组负责客户管理里最基础的资源部分：
 Vue 页面 -> 前端 API -> request/http -> gateway -> GatewayServiceClient -> LocalRegistryService -> service-care -> CustomerService -> Prisma -> MySQL
 ```
 
+## 消息中间件与审计日志
+
+A 组的床位和外出模块已经接入 Redis Stream 消息中间件，核心目的是异步记录关键业务操作：
+
+```txt
+CustomerService 完成业务写库
+  -> MessageBrokerService.publish()
+  -> Redis Stream: yiyang:domain-events
+  -> message-consumer
+  -> AuditLog 审计日志表
+```
+
+当前 A 组会发布这些事件：
+
+- `customer.bed.deleted`：床位删除成功后发布
+- `customer.outing.created`：外出登记成功后发布
+- `customer.outing.returned`：归院登记成功后发布
+
+消费者消费成功后会写入 `AuditLog`，同时在控制台打印类似：
+
+```txt
+[message-consumer] customer.outing.created eventId=... summary=张三 已办理外出登记
+```
+
+这部分答辩时重点讲“异步解耦”：床位删除、外出、归院的主流程先正常返回，审计日志由消费者异步写入，后续可以扩展成家属通知、外出风险提醒、统计分析。
+
 ## 接口错误怎么返回
 
 业务校验失败时，后端会抛出 `BadRequestException` 或 `NotFoundException`，例如重复创建同房间的同名床位会返回“该房间已存在相同床位编号”。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 通过 `GatewayServiceClient` 内部的 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
@@ -148,4 +174,4 @@ Vue 页面 -> 前端 API -> request/http -> gateway -> GatewayServiceClient -> L
 
 ## 你答辩时可以这样说
 
-我负责客户、员工、房间、床位和外出模块。前端页面通过 API 文件调用 `/api/customer/...` 接口，请求先进入 gateway，gateway 通过注册中心按 `CARE_SERVICE` 发现 `service-care`，再用 Nest TCP 转到 customer service。后端主要用 Prisma 的 `findMany`、`create`、`update` 操作数据库。床位模块会校验房间是否存在，删除床位时采用软删除；外出模块会校验客户必须是在住状态，并且不能有未归院记录。归院时更新外出记录的实际归院时间和状态。
+我负责客户、员工、房间、床位和外出模块。前端页面通过 API 文件调用 `/api/customer/...` 接口，请求先进入 gateway，gateway 通过注册中心按 `CARE_SERVICE` 发现 `service-care`，再用 Nest TCP 转到 customer service。后端主要用 Prisma 的 `findMany`、`create`、`update` 操作数据库。床位模块会校验房间是否存在，删除床位时采用软删除；外出模块会校验客户必须是在住状态，并且不能有未归院记录。归院时更新外出记录的实际归院时间和状态。床位删除、外出登记、归院登记成功后还会发布 Redis Stream 消息，由 `message-consumer` 异步写入 `AuditLog` 审计日志表。

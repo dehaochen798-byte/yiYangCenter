@@ -18,6 +18,11 @@ const services = [
     script: 'start:service-care:dev',
     color: '\x1b[35m',
   },
+  {
+    name: 'message-consumer',
+    script: 'start:message-consumer:dev',
+    color: '\x1b[32m',
+  },
 ]
 
 const resetColor = '\x1b[0m'

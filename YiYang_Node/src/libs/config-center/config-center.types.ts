@@ -21,12 +21,18 @@ export type JwtConfig = {
   expiresIn: string
 }
 
+export type MessageBrokerConfig = {
+  redisUrl: string
+  streamKey: string
+}
+
 export type RuntimeConfig = {
   nodeEnv: string
   gateway: GatewayHttpConfig
   services: Record<ServiceName, TcpServiceConfig>
   database: DatabaseConfig
   jwt: JwtConfig
+  messageBroker: MessageBrokerConfig
 }
 
 export interface ConfigCenter {
@@ -35,4 +41,5 @@ export interface ConfigCenter {
   getServiceConfig(serviceName: ServiceName): TcpServiceConfig
   getDatabaseConfig(): DatabaseConfig
   getJwtConfig(): JwtConfig
+  getMessageBrokerConfig(): MessageBrokerConfig
 }

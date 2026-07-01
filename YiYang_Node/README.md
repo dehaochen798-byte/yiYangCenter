@@ -57,6 +57,26 @@ LocalEnvConfigCenter
 
 后续接入 Nacos、Consul、etcd 时，业务模块和 HTTP API 不需要调整，只需要替换 `src/libs/config-center` 与 `src/libs/registry` 的适配器实现。
 
+## 消息中间件
+
+项目接入 `Redis Stream` 作为消息中间件，用于 A 组关键业务动作的异步审计：
+
+```txt
+CustomerService
+  -> MessageBrokerService.publish()
+  -> Redis Stream: yiyang:domain-events
+  -> message-consumer
+  -> AuditLog
+```
+
+当前发布的领域事件：
+
+- `customer.bed.deleted`：床位删除成功后发布
+- `customer.outing.created`：老人外出登记成功后发布
+- `customer.outing.returned`：老人归院登记成功后发布
+
+消费者服务会订阅 Redis Stream，消费成功后写入 `AuditLog` 审计日志表，并在控制台打印消费记录。这样主业务流程不依赖审计写入结果，后续也可以扩展为家属通知、风险提醒、统计分析。
+
 数据库访问规则：
 
 - 仅 `service-auth`、`service-care` 使用 `PrismaService`
@@ -102,6 +122,8 @@ AUTH_SERVICE_PORT=4010
 CARE_SERVICE_HOST=127.0.0.1
 CARE_SERVICE_PORT=4020
 LOCAL_REGISTRY_FILE="" # 可选，默认写入系统临时目录
+REDIS_URL="redis://127.0.0.1:6379"
+MESSAGE_STREAM_KEY="yiyang:domain-events"
 DATABASE_URL="mysql://root:1111@localhost:3306/yiyang_center"
 JWT_SECRET="replace-me"
 JWT_EXPIRES_IN="7d"
@@ -122,10 +144,11 @@ npm run dev:node
 ```bash
 npm run start:service-auth:dev
 npm run start:service-care:dev
+npm run start:message-consumer:dev
 npm run start:gateway:dev
 ```
 
-启动后 `service-auth`、`service-care` 会登记服务实例，`gateway` 会通过服务名发现并转发请求。
+启动后 `service-auth`、`service-care` 会登记服务实例，`gateway` 会通过服务名发现并转发请求；`message-consumer` 会监听 Redis Stream 并写入审计日志。
 
 如果你在仓库根目录并希望同时启动前后端：
 
@@ -179,4 +202,5 @@ npm run generate:module -- --name resident-log --scope care --route resident-log
 - `.env` 中端口是否被占用
 - `DATABASE_URL` 是否正确
 - `gateway / service-auth / service-care` 是否都已启动
+- `message-consumer` 和 Redis 是否已启动
 - 本地注册表文件是否被异常占用；可以删除 `LOCAL_REGISTRY_FILE` 指向的文件后重启服务

@@ -3,6 +3,7 @@ import type {
   DatabaseConfig,
   GatewayHttpConfig,
   JwtConfig,
+  MessageBrokerConfig,
   RuntimeConfig,
 } from './config-center.types.js'
 import type { TcpServiceConfig } from '../config/service-config.js'
@@ -37,6 +38,7 @@ export class LocalEnvConfigCenter implements ConfigCenter {
       },
       database: this.getDatabaseConfig(),
       jwt: this.getJwtConfig(),
+      messageBroker: this.getMessageBrokerConfig(),
     }
   }
 
@@ -80,6 +82,13 @@ export class LocalEnvConfigCenter implements ConfigCenter {
     return {
       secret: process.env.JWT_SECRET || 'change-this-secret',
       expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+    }
+  }
+
+  getMessageBrokerConfig(): MessageBrokerConfig {
+    return {
+      redisUrl: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+      streamKey: process.env.MESSAGE_STREAM_KEY || 'yiyang:domain-events',
     }
   }
 }

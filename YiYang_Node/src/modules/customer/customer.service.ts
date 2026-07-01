@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { hash } from 'bcryptjs'
 import {
   BedStatus,
@@ -9,6 +14,14 @@ import {
   UserStatus,
 } from '../../../generated/prisma/enums.js'
 import { PrismaService } from '../../prisma/prisma.service.js'
+import {
+  createBedDeletedEvent,
+  createOutingCreatedEvent,
+  createOutingReturnedEvent,
+  MESSAGE_BROKER,
+  type DomainEvent,
+  type MessageBrokerService,
+} from '../../libs/message-broker/index.js'
 import type {
   CreateCheckInDto,
   CreateCheckOutDto,
@@ -34,7 +47,10 @@ function normalizeText(value?: string | null) {
 
 @Injectable()
 export class CustomerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(MESSAGE_BROKER) private readonly messageBroker: MessageBrokerService
+  ) {}
 
   getModules() {
     return {
@@ -492,6 +508,13 @@ export class CustomerService {
     })
 
     await this.refreshRoomBedCount(current.roomId)
+    await this.publishDomainEvent(
+      createBedDeletedEvent({
+        bedId: bed.id,
+        roomId: current.roomId,
+        bedNo: current.bedNo,
+      })
+    )
 
     return {
       code: 200,
@@ -846,6 +869,16 @@ export class CustomerService {
         resident: true,
       },
     })
+    await this.publishDomainEvent(
+      createOutingCreatedEvent({
+        outingId: outing.id,
+        residentId: outing.residentId,
+        residentName: outing.resident.fullName,
+        destination: outing.destination,
+        startAt: outing.startAt,
+        expectedReturnAt: outing.expectedReturnAt,
+      })
+    )
 
     return {
       code: 201,
@@ -873,6 +906,14 @@ export class CustomerService {
         resident: true,
       },
     })
+    await this.publishDomainEvent(
+      createOutingReturnedEvent({
+        outingId: updated.id,
+        residentId: updated.residentId,
+        residentName: updated.resident.fullName,
+        actualReturnAt: updated.actualReturnAt ?? new Date(payload.actualReturnAt),
+      })
+    )
 
     return {
       code: 200,
@@ -1110,7 +1151,11 @@ export class CustomerService {
     return bed
   }
 
-  private async ensureBedNoAvailable(roomId: number, bedNo: string, currentBedId?: number) {
+  private async ensureBedNoAvailable(
+    roomId: number,
+    bedNo: string,
+    currentBedId?: number
+  ) {
     const existing = await this.prisma.bed.findFirst({
       where: {
         roomId,
@@ -1155,5 +1200,14 @@ export class CustomerService {
         bedCount: count,
       },
     })
+  }
+
+  private async publishDomainEvent(event: DomainEvent) {
+    try {
+      await this.messageBroker.publish(event)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      console.error(`[message-broker] failed to publish ${event.eventType}: ${message}`)
+    }
   }
 }

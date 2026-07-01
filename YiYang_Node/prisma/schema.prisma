@@ -259,3 +259,14 @@ model CareRecord {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  eventId   String   @unique @db.VarChar(80)
+  eventType String   @db.VarChar(100)
+  module    String   @db.VarChar(50)
+  action    String   @db.VarChar(50)
+  summary   String   @db.VarChar(255)
+  payload   Json?
+  createdAt DateTime @default(now())
+}
