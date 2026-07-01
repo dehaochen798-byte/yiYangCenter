@@ -30,6 +30,8 @@ A 组负责客户管理里最基础的资源部分：
    - `YiYang_Vue/src/modules/customer/outing/api/outing.api.ts`
 4. 最后看后端业务逻辑：
    - `YiYang_Node/src/apps/gateway/http/customer.controller.ts`
+   - `YiYang_Node/src/apps/gateway/services/gateway-service-client.ts`
+   - `YiYang_Node/src/libs/registry/local-registry.service.ts`
    - `YiYang_Node/src/modules/customer/customer.controller.ts`
    - `YiYang_Node/src/modules/customer/customer.service.ts`
 
@@ -41,22 +43,23 @@ A 组负责客户管理里最基础的资源部分：
 2. 页面调用 `createBed()`。
 3. `createBed()` 通过 `request()` 请求 `/api/customer/beds`。
 4. 请求先到 gateway：`apps/gateway/http/customer.controller.ts`。
-5. gateway 不直接查数据库，而是把消息转给后端服务。
-6. 后端服务进入 `modules/customer/customer.controller.ts`。
-7. controller 调用 `CustomerService.createBed()`。
-8. service 先校验房间是否存在、床位编号是否重复，再使用 Prisma 写入 `Bed` 表。
-9. 创建后调用 `refreshRoomBedCount()`，刷新房间床位数量。
-10. 数据返回前端，页面刷新列表。
+5. gateway 不直接查数据库，而是通过 `GatewayServiceClient` 按 `CARE_SERVICE` 到本地注册中心发现 `service-care` 实例。
+6. gateway 使用 Nest TCP 把消息转给 `service-care`。
+7. `service-care` 进入 `modules/customer/customer.controller.ts`。
+8. controller 调用 `CustomerService.createBed()`。
+9. service 先校验房间是否存在、床位编号是否重复，再使用 Prisma 写入 `Bed` 表。
+10. 创建后调用 `refreshRoomBedCount()`，刷新房间床位数量。
+11. 数据返回前端，页面刷新列表。
 
 简单记法：
 
 ```txt
-Vue 页面 -> 前端 API -> request/http -> gateway -> customer controller -> customer service -> Prisma -> MySQL
+Vue 页面 -> 前端 API -> request/http -> gateway -> GatewayServiceClient -> LocalRegistryService -> service-care -> CustomerService -> Prisma -> MySQL
 ```
 
 ## 接口错误怎么返回
 
-业务校验失败时，后端会抛出 `BadRequestException` 或 `NotFoundException`，例如重复创建同房间的同名床位会返回“该房间已存在相同床位编号”。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 再通过 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+业务校验失败时，后端会抛出 `BadRequestException` 或 `NotFoundException`，例如重复创建同房间的同名床位会返回“该房间已存在相同床位编号”。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 通过 `GatewayServiceClient` 内部的 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
 
 ```json
 {
@@ -145,4 +148,4 @@ Vue 页面 -> 前端 API -> request/http -> gateway -> customer controller -> cu
 
 ## 你答辩时可以这样说
 
-我负责客户、员工、房间、床位和外出模块。前端页面通过 API 文件调用 `/api/customer/...` 接口，请求先进入 gateway，再转到 customer service。后端主要用 Prisma 的 `findMany`、`create`、`update` 操作数据库。床位模块会校验房间是否存在，删除床位时采用软删除；外出模块会校验客户必须是在住状态，并且不能有未归院记录。归院时更新外出记录的实际归院时间和状态。
+我负责客户、员工、房间、床位和外出模块。前端页面通过 API 文件调用 `/api/customer/...` 接口，请求先进入 gateway，gateway 通过注册中心按 `CARE_SERVICE` 发现 `service-care`，再用 Nest TCP 转到 customer service。后端主要用 Prisma 的 `findMany`、`create`、`update` 操作数据库。床位模块会校验房间是否存在，删除床位时采用软删除；外出模块会校验客户必须是在住状态，并且不能有未归院记录。归院时更新外出记录的实际归院时间和状态。

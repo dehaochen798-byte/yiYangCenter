@@ -22,6 +22,8 @@ B 组负责护理模块：
    - `YiYang_Vue/src/modules/nursing/api/nursing.api.ts`
 4. 最后看后端：
    - `YiYang_Node/src/apps/gateway/http/nursing.controller.ts`
+   - `YiYang_Node/src/apps/gateway/services/gateway-service-client.ts`
+   - `YiYang_Node/src/libs/registry/local-registry.service.ts`
    - `YiYang_Node/src/modules/nursing/nursing.controller.ts`
    - `YiYang_Node/src/modules/nursing/nursing.service.ts`
 
@@ -33,22 +35,23 @@ B 组负责护理模块：
 2. 页面调用 `createCareRecord()`。
 3. 前端请求 `/api/nursing/care-records`。
 4. 请求进入 gateway 的 `nursing.controller.ts`。
-5. gateway 把请求转给护理服务。
-6. 后端进入 `modules/nursing/nursing.controller.ts`。
-7. controller 调用 `NursingService.createCareRecord()`。
-8. service 先检查客户、护理内容、员工是否存在。
-9. 检查通过后，用 Prisma 创建 `CareRecord`。
-10. 返回护理记录，页面刷新列表。
+5. gateway 通过 `GatewayServiceClient` 按 `CARE_SERVICE` 到本地注册中心发现 `service-care` 实例。
+6. gateway 使用 Nest TCP 把消息转给 `service-care`。
+7. `service-care` 进入 `modules/nursing/nursing.controller.ts`。
+8. controller 调用 `NursingService.createCareRecord()`。
+9. service 先检查客户、护理内容、员工是否存在。
+10. 检查通过后，用 Prisma 创建 `CareRecord`。
+11. 返回护理记录，页面刷新列表。
 
 简单记法：
 
 ```txt
-护理页面 -> nursing.api.ts -> /api/nursing/... -> gateway -> NursingService -> Prisma -> MySQL
+护理页面 -> nursing.api.ts -> /api/nursing/... -> gateway -> GatewayServiceClient -> LocalRegistryService -> service-care -> NursingService -> Prisma -> MySQL
 ```
 
 ## 接口错误怎么返回
 
-护理模块里，客户、护理内容或执行员工不存在时，service 会抛出 `NotFoundException`；参数或业务状态不允许时，会抛出 `BadRequestException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 再通过 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+护理模块里，客户、护理内容或执行员工不存在时，service 会抛出 `NotFoundException`；参数或业务状态不允许时，会抛出 `BadRequestException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 通过 `GatewayServiceClient` 内部的 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
 
 ```json
 {
@@ -129,4 +132,4 @@ B 组负责护理模块：
 
 ## 你答辩时可以这样说
 
-我负责护理模块。护理级别用于定义护理等级，护理内容挂在护理级别下面，护理记录用于记录某个员工在某个时间给某个客户执行了某项护理。前端通过 `nursing.api.ts` 调用 `/api/nursing/...` 接口，后端用 `NursingService` 处理业务，并通过 Prisma 操作 `CareLevel`、`CareItem`、`CareRecord` 三张核心表。创建护理记录前会先校验客户、护理内容和执行人是否存在。
+我负责护理模块。护理级别用于定义护理等级，护理内容挂在护理级别下面，护理记录用于记录某个员工在某个时间给某个客户执行了某项护理。前端通过 `nursing.api.ts` 调用 `/api/nursing/...` 接口，请求先进入 gateway，gateway 通过注册中心发现 `service-care` 后转发到 `NursingService`。后端通过 Prisma 操作 `CareLevel`、`CareItem`、`CareRecord` 三张核心表，创建护理记录前会先校验客户、护理内容和执行人是否存在。

@@ -27,6 +27,8 @@ C 组负责客户的膳食和服务信息：
    - `YiYang_Vue/src/modules/customer/service-focus/api/service-focus.api.ts`
 4. 最后看后端：
    - `YiYang_Node/src/apps/gateway/http/customer.controller.ts`
+   - `YiYang_Node/src/apps/gateway/services/gateway-service-client.ts`
+   - `YiYang_Node/src/libs/registry/local-registry.service.ts`
    - `YiYang_Node/src/modules/customer/customer.controller.ts`
    - `YiYang_Node/src/modules/customer/customer.service.ts`
 
@@ -38,21 +40,22 @@ C 组负责客户的膳食和服务信息：
 2. 页面调用 `createMealPlan()`。
 3. 前端请求 `/api/customer/meal-plans`。
 4. 请求进入 gateway 的 `customer.controller.ts`。
-5. gateway 转给 customer 服务。
-6. 后端调用 `CustomerService.createMealPlan()`。
-7. service 先用 `ensureResidentExists()` 确认客户存在。
-8. 再用 Prisma 创建 `MealPlan`。
-9. 返回数据，页面刷新列表。
+5. gateway 通过 `GatewayServiceClient` 按 `CARE_SERVICE` 到本地注册中心发现 `service-care` 实例。
+6. gateway 使用 Nest TCP 把消息转给 `service-care`。
+7. 后端调用 `CustomerService.createMealPlan()`。
+8. service 先用 `ensureResidentExists()` 确认客户存在。
+9. 再用 Prisma 创建 `MealPlan`。
+10. 返回数据，页面刷新列表。
 
 简单记法：
 
 ```txt
-膳食/服务页面 -> 对应 api.ts -> /api/customer/... -> gateway -> CustomerService -> Prisma -> MySQL
+膳食/服务页面 -> 对应 api.ts -> /api/customer/... -> gateway -> GatewayServiceClient -> LocalRegistryService -> service-care -> CustomerService -> Prisma -> MySQL
 ```
 
 ## 接口错误怎么返回
 
-膳食与服务模块里，客户或健康管家不存在时，service 会抛出 `NotFoundException`；参数或业务状态不允许时，会抛出 `BadRequestException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 再通过 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+膳食与服务模块里，客户或健康管家不存在时，service 会抛出 `NotFoundException`；参数或业务状态不允许时，会抛出 `BadRequestException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 通过 `GatewayServiceClient` 内部的 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
 
 ```json
 {
@@ -132,4 +135,4 @@ C 组负责客户的膳食和服务信息：
 
 ## 你答辩时可以这样说
 
-我负责膳食与服务模块。膳食方案是针对单个客户的个性化方案，每周菜单是养老中心统一展示的周菜单。服务对象用于维护客户和健康管家的关系，服务关注用于记录客户购买或使用的服务。前端通过各自的 `api.ts` 调用 `/api/customer/...` 接口，后端在 `CustomerService` 中先校验客户或健康管家是否存在，再用 Prisma 对对应表进行查询、新增和修改。
+我负责膳食与服务模块。膳食方案是针对单个客户的个性化方案，每周菜单是养老中心统一展示的周菜单。服务对象用于维护客户和健康管家的关系，服务关注用于记录客户购买或使用的服务。前端通过各自的 `api.ts` 调用 `/api/customer/...` 接口，请求先进入 gateway，gateway 通过注册中心发现 `service-care` 后转发到 `CustomerService`。后端先校验客户或健康管家是否存在，再用 Prisma 对对应表进行查询、新增和修改。
