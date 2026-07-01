@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { ClientsModule, Transport } from '@nestjs/microservices'
 import { ConfigModule } from '@nestjs/config'
 import { AppController } from '../../app.controller.js'
 import { AppService } from '../../app.service.js'
@@ -11,10 +10,8 @@ import { DashboardController } from './http/dashboard.controller.js'
 import { NursingController } from './http/nursing.controller.js'
 import { GatewayJwtGuard } from './security/gateway-jwt.guard.js'
 import { GatewayAuthService } from './services/gateway-auth.service.js'
-import { getAuthServiceTcpConfig, getCareServiceTcpConfig } from '../../libs/config/service-config.js'
-
-const authService = getAuthServiceTcpConfig()
-const careService = getCareServiceTcpConfig()
+import { GatewayServiceClient } from './services/gateway-service-client.js'
+import { LocalRegistryService } from '../../libs/registry/local-registry.service.js'
 
 @Module({
   imports: [
@@ -22,20 +19,21 @@ const careService = getCareServiceTcpConfig()
       isGlobal: true,
       load: [appConfig],
     }),
-    ClientsModule.register([
-      {
-        name: 'AUTH_SERVICE',
-        transport: Transport.TCP,
-        options: authService,
-      },
-      {
-        name: 'CARE_SERVICE',
-        transport: Transport.TCP,
-        options: careService,
-      },
-    ]),
   ],
-  controllers: [AppController, AuthController, CustomerController, DashboardController, NursingController],
-  providers: [AppService, AllExceptionsFilter, GatewayJwtGuard, GatewayAuthService],
+  controllers: [
+    AppController,
+    AuthController,
+    CustomerController,
+    DashboardController,
+    NursingController,
+  ],
+  providers: [
+    AppService,
+    AllExceptionsFilter,
+    GatewayJwtGuard,
+    GatewayAuthService,
+    GatewayServiceClient,
+    LocalRegistryService,
+  ],
 })
 export class GatewayModule {}

@@ -2,17 +2,16 @@ import {
   Body,
   Controller,
   Get,
-  Inject,
   Param,
   Patch,
   Post,
   UseGuards,
   Delete,
 } from '@nestjs/common'
-import type { ClientProxy } from '@nestjs/microservices'
 import { GatewayJwtGuard } from '../security/gateway-jwt.guard.js'
-import { sendTcpMessage } from '../../../libs/microservices/client-proxy.util.js'
 import { CARE_PATTERNS } from '../../../libs/contracts/care.contract.js'
+import { SERVICE_NAMES } from '../../../libs/registry/registry.types.js'
+import { GatewayServiceClient } from '../services/gateway-service-client.js'
 import {
   CreateCheckInDto,
   CreateCheckOutDto,
@@ -31,31 +30,47 @@ import {
 @Controller('customer')
 @UseGuards(GatewayJwtGuard)
 export class CustomerController {
-  constructor(@Inject('CARE_SERVICE') private readonly careClient: ClientProxy) {}
+  constructor(private readonly gatewayClient: GatewayServiceClient) {}
 
   @Get('modules')
   getModules() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.customerModules, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.customerModules,
+      undefined
+    )
   }
 
   @Get('overview')
   getOverview() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.customerOverview, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.customerOverview,
+      undefined
+    )
   }
 
   @Get('residents')
   listResidents() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.residentsList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.residentsList,
+      undefined
+    )
   }
 
   @Post('residents')
   createResident(@Body() body: SaveResidentDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.residentsCreate, body)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.residentsCreate,
+      body
+    )
   }
 
   @Patch('residents/:id')
   updateResident(@Param('id') id: string, @Body() body: SaveResidentDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.residentsUpdate, {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.residentsUpdate, {
       id: Number(id),
       data: body,
     })
@@ -63,17 +78,17 @@ export class CustomerController {
 
   @Get('users')
   listUsers() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.usersList, undefined)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersList, undefined)
   }
 
   @Post('users')
   createUser(@Body() body: SaveUserDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.usersCreate, body)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersCreate, body)
   }
 
   @Patch('users/:id')
   updateUser(@Param('id') id: string, @Body() body: SaveUserDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.usersUpdate, {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersUpdate, {
       id: Number(id),
       data: body,
     })
@@ -81,17 +96,17 @@ export class CustomerController {
 
   @Get('rooms')
   listRooms() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.roomsList, undefined)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.roomsList, undefined)
   }
 
   @Post('rooms')
   createRoom(@Body() body: SaveRoomDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.roomsCreate, body)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.roomsCreate, body)
   }
 
   @Patch('rooms/:id')
   updateRoom(@Param('id') id: string, @Body() body: SaveRoomDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.roomsUpdate, {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.roomsUpdate, {
       id: Number(id),
       data: body,
     })
@@ -99,17 +114,17 @@ export class CustomerController {
 
   @Get('beds')
   listBeds() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.bedsList, undefined)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsList, undefined)
   }
 
   @Post('beds')
   createBed(@Body() body: SaveBedDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.bedsCreate, body)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsCreate, body)
   }
 
   @Patch('beds/:id')
   updateBed(@Param('id') id: string, @Body() body: SaveBedDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.bedsUpdate, {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsUpdate, {
       id: Number(id),
       data: body,
     })
@@ -117,22 +132,32 @@ export class CustomerController {
 
   @Delete('beds/:id')
   deleteBed(@Param('id') id: string) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.bedsDelete, { id: Number(id) })
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsDelete, {
+      id: Number(id),
+    })
   }
 
   @Get('meal-plans')
   listMealPlans() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.mealPlansList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealPlansList,
+      undefined
+    )
   }
 
   @Post('meal-plans')
   createMealPlan(@Body() body: SaveMealPlanDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.mealPlansCreate, body)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealPlansCreate,
+      body
+    )
   }
 
   @Patch('meal-plans/:id')
   updateMealPlan(@Param('id') id: string, @Body() body: SaveMealPlanDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.mealPlansUpdate, {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.mealPlansUpdate, {
       id: Number(id),
       data: body,
     })
@@ -140,55 +165,83 @@ export class CustomerController {
 
   @Get('meal-calendars')
   listMealCalendars() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.mealCalendarsList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealCalendarsList,
+      undefined
+    )
   }
 
   @Post('meal-calendars')
   createMealCalendar(@Body() body: SaveMealCalendarDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.mealCalendarsCreate, body)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealCalendarsCreate,
+      body
+    )
   }
 
   @Patch('meal-calendars/:id')
   updateMealCalendar(@Param('id') id: string, @Body() body: SaveMealCalendarDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.mealCalendarsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealCalendarsUpdate,
+      {
+        id: Number(id),
+        data: body,
+      }
+    )
   }
 
   @Get('check-ins')
   listCheckIns() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.checkInsList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkInsList,
+      undefined
+    )
   }
 
   @Post('check-ins')
   createCheckIn(@Body() body: CreateCheckInDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.checkInsCreate, body)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.checkInsCreate, body)
   }
 
   @Get('check-outs')
   listCheckOuts() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.checkOutsList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkOutsList,
+      undefined
+    )
   }
 
   @Post('check-outs')
   createCheckOut(@Body() body: CreateCheckOutDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.checkOutsCreate, body)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkOutsCreate,
+      body
+    )
   }
 
   @Get('outings')
   listOutings() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.outingsList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.outingsList,
+      undefined
+    )
   }
 
   @Post('outings')
   createOuting(@Body() body: CreateOutingDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.outingsCreate, body)
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.outingsCreate, body)
   }
 
   @Patch('outings/:id/return')
   returnOuting(@Param('id') id: string, @Body() body: ReturnOutingDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.outingsReturn, {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.outingsReturn, {
       id: Number(id),
       data: body,
     })
@@ -196,37 +249,61 @@ export class CustomerController {
 
   @Get('service-targets')
   listServiceTargets() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.serviceTargetsList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.serviceTargetsList,
+      undefined
+    )
   }
 
   @Post('service-targets')
   createServiceTarget(@Body() body: SaveServiceTargetDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.serviceTargetsCreate, body)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.serviceTargetsCreate,
+      body
+    )
   }
 
   @Patch('service-targets/:id')
   updateServiceTarget(@Param('id') id: string, @Body() body: SaveServiceTargetDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.serviceTargetsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.serviceTargetsUpdate,
+      {
+        id: Number(id),
+        data: body,
+      }
+    )
   }
 
   @Get('service-focuses')
   listServiceFocuses() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.serviceFocusesList, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.serviceFocusesList,
+      undefined
+    )
   }
 
   @Post('service-focuses')
   createServiceFocus(@Body() body: SaveServiceFocusDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.serviceFocusesCreate, body)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.serviceFocusesCreate,
+      body
+    )
   }
 
   @Patch('service-focuses/:id')
   updateServiceFocus(@Param('id') id: string, @Body() body: SaveServiceFocusDto) {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.serviceFocusesUpdate, {
-      id: Number(id),
-      data: body,
-    })
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.serviceFocusesUpdate,
+      {
+        id: Number(id),
+        data: body,
+      }
+    )
   }
 }

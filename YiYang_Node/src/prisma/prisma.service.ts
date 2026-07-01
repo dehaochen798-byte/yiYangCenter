@@ -4,17 +4,11 @@ import { Injectable } from '@nestjs/common'
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { PrismaMariaDb } from '@prisma/adapter-mariadb'
 import { PrismaClient } from '../../generated/prisma/client.js'
+import { LocalEnvConfigCenter } from '../libs/config-center/local-env-config-center.js'
+import type { DatabaseConfig } from '../libs/config-center/config-center.types.js'
 
 const DEFAULT_POOL_LIMIT = 10
-
-function isTruthy(value: string | undefined) {
-  return value === 'true' || value === '1'
-}
-
-function parsePositiveInt(value: string | undefined, fallback: number) {
-  const parsed = Number(value)
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
-}
+const configCenter = new LocalEnvConfigCenter()
 
 function parseQueryValue(value: string) {
   if (value === 'true') {
@@ -44,14 +38,11 @@ function readTlsFile(filePath: string | undefined) {
   return readFileSync(filePath, 'utf8')
 }
 
-function buildSslConfig() {
-  const rejectUnauthorized = process.env.DB_SSL_REJECT_UNAUTHORIZED
-    ? isTruthy(process.env.DB_SSL_REJECT_UNAUTHORIZED)
-    : true
-
-  const ca = readTlsFile(process.env.DB_SSL_CA_PATH)
-  const cert = readTlsFile(process.env.DB_SSL_CERT_PATH)
-  const key = readTlsFile(process.env.DB_SSL_KEY_PATH)
+function buildSslConfig(databaseConfig: DatabaseConfig) {
+  const rejectUnauthorized = databaseConfig.sslRejectUnauthorized
+  const ca = readTlsFile(databaseConfig.sslCaPath)
+  const cert = readTlsFile(databaseConfig.sslCertPath)
+  const key = readTlsFile(databaseConfig.sslKeyPath)
   const hasCustomTlsMaterial = Boolean(ca || cert || key)
 
   if (!hasCustomTlsMaterial && rejectUnauthorized) {
@@ -77,7 +68,8 @@ function buildSslConfig() {
   return sslConfig
 }
 
-function buildConnectionConfig(databaseUrl: string) {
+function buildConnectionConfig(databaseConfig: DatabaseConfig, nodeEnv: string) {
+  const databaseUrl = databaseConfig.url
   const connectionUrl = new URL(databaseUrl)
   const config: Record<string, unknown> = {}
 
@@ -92,28 +84,25 @@ function buildConnectionConfig(databaseUrl: string) {
   config.database = decodeURIComponent(connectionUrl.pathname.replace(/^\//, ''))
 
   if (config.connectionLimit === undefined) {
-    config.connectionLimit = parsePositiveInt(
-      process.env.DB_CONNECTION_LIMIT,
-      DEFAULT_POOL_LIMIT
+    config.connectionLimit = databaseConfig.connectionLimit || DEFAULT_POOL_LIMIT
+  }
+
+  const sslEnabled = databaseConfig.ssl || config.ssl === true
+
+  if (nodeEnv === 'production' && !sslEnabled) {
+    throw new Error(
+      'DB_SSL must be enabled in production to avoid plaintext database traffic'
     )
   }
 
-  const sslEnabled = isTruthy(process.env.DB_SSL) || config.ssl === true
-
-  if (process.env.NODE_ENV === 'production' && !sslEnabled) {
-    throw new Error('DB_SSL must be enabled in production to avoid plaintext database traffic')
-  }
-
   if (sslEnabled) {
-    config.ssl = buildSslConfig()
+    config.ssl = buildSslConfig(databaseConfig)
   }
 
-  const allowPublicKeyRetrieval = process.env.DB_ALLOW_PUBLIC_KEY_RETRIEVAL
-
-  if (allowPublicKeyRetrieval !== undefined) {
-    config.allowPublicKeyRetrieval = isTruthy(allowPublicKeyRetrieval)
+  if (databaseConfig.allowPublicKeyRetrieval !== undefined) {
+    config.allowPublicKeyRetrieval = databaseConfig.allowPublicKeyRetrieval
   } else if (!sslEnabled && config.allowPublicKeyRetrieval === undefined) {
-    config.allowPublicKeyRetrieval = process.env.NODE_ENV !== 'production'
+    config.allowPublicKeyRetrieval = nodeEnv !== 'production'
   }
 
   return config
@@ -122,18 +111,22 @@ function buildConnectionConfig(databaseUrl: string) {
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
-    const databaseUrl = process.env.DATABASE_URL
+    const runtimeConfig = configCenter.getRuntimeConfig()
+    const databaseUrl = runtimeConfig.database.url
 
     if (!databaseUrl) {
       throw new Error('DATABASE_URL is not defined')
     }
 
-    const adapter = new PrismaMariaDb(buildConnectionConfig(databaseUrl), {
-      database: decodeURIComponent(new URL(databaseUrl).pathname.replace(/^\//, '')),
-      onConnectionError: (error) => {
-        console.error('Prisma MariaDB connection error:', error.message)
-      },
-    })
+    const adapter = new PrismaMariaDb(
+      buildConnectionConfig(runtimeConfig.database, runtimeConfig.nodeEnv),
+      {
+        database: decodeURIComponent(new URL(databaseUrl).pathname.replace(/^\//, '')),
+        onConnectionError: (error) => {
+          console.error('Prisma MariaDB connection error:', error.message)
+        },
+      }
+    )
 
     super({ adapter })
   }

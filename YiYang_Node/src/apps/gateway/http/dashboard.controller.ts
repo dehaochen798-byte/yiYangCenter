@@ -1,16 +1,20 @@
-import { Controller, Get, Inject, UseGuards } from '@nestjs/common'
-import type { ClientProxy } from '@nestjs/microservices'
+import { Controller, Get, UseGuards } from '@nestjs/common'
 import { CARE_PATTERNS } from '../../../libs/contracts/care.contract.js'
-import { sendTcpMessage } from '../../../libs/microservices/client-proxy.util.js'
+import { SERVICE_NAMES } from '../../../libs/registry/registry.types.js'
 import { GatewayJwtGuard } from '../security/gateway-jwt.guard.js'
+import { GatewayServiceClient } from '../services/gateway-service-client.js'
 
 @Controller('dashboard')
 @UseGuards(GatewayJwtGuard)
 export class DashboardController {
-  constructor(@Inject('CARE_SERVICE') private readonly careClient: ClientProxy) {}
+  constructor(private readonly gatewayClient: GatewayServiceClient) {}
 
   @Get('summary')
   getSummary() {
-    return sendTcpMessage(this.careClient, CARE_PATTERNS.dashboardSummary, undefined)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.dashboardSummary,
+      undefined
+    )
   }
 }

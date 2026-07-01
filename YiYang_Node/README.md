@@ -27,6 +27,36 @@
 - `gateway <-> service-auth`：Nest TCP
 - `gateway <-> service-care`：Nest TCP
 
+答辩版微服务治理：
+
+```txt
+YiYang_Vue
+   |
+   v
+gateway 统一 HTTP 网关 (/api)
+   |
+   |-- 查询 LocalRegistryService
+   |
+   |-- AUTH_SERVICE -> service-auth
+   |
+   `-- CARE_SERVICE -> service-care
+
+LocalEnvConfigCenter
+   |
+   |-- gateway 端口
+   |-- 微服务 host / port / service name
+   |-- database / jwt
+   `-- 后续可替换为 Nacos / Consul 配置中心适配器
+```
+
+当前实现了注册中心和配置中心的本地适配版：
+
+- `LocalEnvConfigCenter`：统一读取 `.env` / 环境变量，作为本地配置中心适配器。
+- `LocalRegistryService`：服务启动时写入本地注册表文件，网关按服务名发现实例。
+- `GatewayServiceClient`：网关不再硬编码 TCP 客户端，而是通过注册中心解析服务实例后创建/复用客户端。
+
+后续接入 Nacos、Consul、etcd 时，业务模块和 HTTP API 不需要调整，只需要替换 `src/libs/config-center` 与 `src/libs/registry` 的适配器实现。
+
 数据库访问规则：
 
 - 仅 `service-auth`、`service-care` 使用 `PrismaService`
@@ -44,8 +74,10 @@ YiYang_Node
 |  |  `- service-care/     # 养老业务微服务
 |  |- libs/
 |  |  |- config/           # 服务端口与运行配置
+|  |  |- config-center/    # 配置中心抽象与本地 .env 适配
 |  |  |- contracts/        # 微服务消息契约
-|  |  `- microservices/    # ClientProxy 工具
+|  |  |- microservices/    # ClientProxy 工具
+|  |  `- registry/         # 注册中心抽象与本地注册表适配
 |  |- modules/             # 业务模块
 |  |- prisma/              # PrismaService
 |  `- common/              # 通用过滤器、枚举等
@@ -69,6 +101,7 @@ AUTH_SERVICE_HOST=127.0.0.1
 AUTH_SERVICE_PORT=4010
 CARE_SERVICE_HOST=127.0.0.1
 CARE_SERVICE_PORT=4020
+LOCAL_REGISTRY_FILE="" # 可选，默认写入系统临时目录
 DATABASE_URL="mysql://root:1111@localhost:3306/yiyang_center"
 JWT_SECRET="replace-me"
 JWT_EXPIRES_IN="7d"
@@ -78,16 +111,26 @@ JWT_EXPIRES_IN="7d"
 
 ### 运行
 
-```bash
-npm run start:gateway:dev
-npm run start:service-auth:dev
-npm run start:service-care:dev
-```
-
-如果你在仓库根目录，推荐直接执行：
+推荐一键启动三个后端入口：
 
 ```bash
 npm run dev:node
+```
+
+也可以分别启动，建议顺序为：
+
+```bash
+npm run start:service-auth:dev
+npm run start:service-care:dev
+npm run start:gateway:dev
+```
+
+启动后 `service-auth`、`service-care` 会登记服务实例，`gateway` 会通过服务名发现并转发请求。
+
+如果你在仓库根目录并希望同时启动前后端：
+
+```bash
+npm run dev
 ```
 
 ### 构建
@@ -127,6 +170,7 @@ npm run generate:module -- --name resident-log --scope care --route resident-log
 当前已经验证：
 
 - `npm run build` 通过
+- `npm test` 通过
 - 生成器命令可生成模块骨架
 
 如果本地无法联通，优先检查：
@@ -135,3 +179,4 @@ npm run generate:module -- --name resident-log --scope care --route resident-log
 - `.env` 中端口是否被占用
 - `DATABASE_URL` 是否正确
 - `gateway / service-auth / service-care` 是否都已启动
+- 本地注册表文件是否被异常占用；可以删除 `LOCAL_REGISTRY_FILE` 指向的文件后重启服务

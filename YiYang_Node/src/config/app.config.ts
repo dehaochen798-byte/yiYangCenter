@@ -1,6 +1,10 @@
+import { LocalEnvConfigCenter } from '../libs/config-center/local-env-config-center.js'
+
+const configCenter = new LocalEnvConfigCenter()
+
 export default () => ({
-  port: Number(process.env.PORT || 3000),
-  jwtSecret: process.env.JWT_SECRET || 'change-this-secret',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  databaseUrl: process.env.DATABASE_URL || '',
+  port: configCenter.getGatewayHttpConfig().port,
+  jwtSecret: configCenter.getJwtConfig().secret,
+  jwtExpiresIn: configCenter.getJwtConfig().expiresIn,
+  databaseUrl: configCenter.getDatabaseConfig().url,
 })
