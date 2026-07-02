@@ -44,7 +44,6 @@
             <div class="dashboard-page__section-title">
               <div>
                 <h3>客户状态构成</h3>
-                <p>用环形图快速观察当前客户结构。</p>
               </div>
             </div>
           </template>
@@ -59,7 +58,6 @@
             <div class="dashboard-page__section-title">
               <div>
                 <h3>待关注事项</h3>
-                <p>根据当前实时数据生成的运营提醒。</p>
               </div>
             </div>
           </template>
@@ -86,7 +84,6 @@
             <div class="dashboard-page__section-title">
               <div>
                 <h3>快捷入口</h3>
-                <p>直接跳转到高频业务页面。</p>
               </div>
             </div>
           </template>
@@ -114,7 +111,6 @@
             <div class="dashboard-page__section-title">
               <div>
                 <h3>护理级别分布</h3>
-                <p>对比每个护理级别下的客户负载和护理内容规模。</p>
               </div>
             </div>
           </template>
@@ -129,7 +125,6 @@
             <div class="dashboard-page__section-title">
               <div>
                 <h3>房间占用概览</h3>
-                <p>用堆叠柱状图观察各房间的空床、占床和停用分布。</p>
               </div>
             </div>
           </template>

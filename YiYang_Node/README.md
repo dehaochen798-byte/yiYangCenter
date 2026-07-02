@@ -139,6 +139,8 @@ JWT_EXPIRES_IN="7d"
 npm run dev:node
 ```
 
+根目录的 `npm run dev` / `npm run dev:node` 会先检查 `127.0.0.1:6379` 是否已有 Redis。如果没有，会尝试用 Docker 启动名为 `yiyang-redis` 的 Redis 容器；如果 Docker 不可用，会打印手动启动提示，但不会阻止其他服务启动。
+
 也可以分别启动，建议顺序为：
 
 ```bash
@@ -155,6 +157,14 @@ npm run start:gateway:dev
 ```bash
 npm run dev
 ```
+
+手动启动 Redis helper：
+
+```bash
+npm run dev:redis
+```
+
+这个自动 helper 的好处是演示时少一步准备；弊端是本机需要 Docker，且会占用 `6379` 端口。如果你已经有自己的 Redis，只要保证 `.env` 中 `REDIS_URL` 指向正确地址即可。
 
 ### 构建
 
