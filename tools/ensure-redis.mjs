@@ -19,29 +19,34 @@ export async function ensureRedis() {
     return false;
   }
 
-  const containerExists = docker([
-    "ps",
-    "-a",
-    "--filter",
-    `name=^/${redisContainerName}$`,
-    "--format",
-    "{{.Names}}",
-  ])
-    .split(/\r?\n/)
-    .some((name) => name.trim() === redisContainerName);
+  try {
+    const containerExists = docker([
+      "ps",
+      "-a",
+      "--filter",
+      `name=^/${redisContainerName}$`,
+      "--format",
+      "{{.Names}}",
+    ])
+      .split(/\r?\n/)
+      .some((name) => name.trim() === redisContainerName);
 
-  if (containerExists) {
-    docker(["start", redisContainerName]);
-  } else {
-    docker([
-      "run",
-      "-d",
-      "--name",
-      redisContainerName,
-      "-p",
-      `${redisPort}:6379`,
-      "redis:7-alpine",
-    ]);
+    if (containerExists) {
+      docker(["start", redisContainerName]);
+    } else {
+      docker([
+        "run",
+        "-d",
+        "--name",
+        redisContainerName,
+        "-p",
+        `${redisPort}:6379`,
+        "redis:7-alpine",
+      ]);
+    }
+  } catch (error) {
+    printManualHint(`Docker Redis startup failed: ${getErrorSummary(error)}`);
+    return false;
   }
 
   if (await waitForRedis(redisHost, redisPort)) {
@@ -107,6 +112,23 @@ function printManualHint(reason) {
   process.stderr.write(
     `[redis] Start it manually: docker run -d --name ${redisContainerName} -p ${redisPort}:6379 redis:7-alpine\n`,
   );
+}
+
+function getErrorSummary(error) {
+  if (!error || typeof error !== "object") {
+    return String(error);
+  }
+
+  const execError = error;
+  const stderr =
+    typeof execError.stderr === "string"
+      ? execError.stderr
+      : Buffer.isBuffer(execError.stderr)
+        ? execError.stderr.toString("utf8")
+        : "";
+  const message = stderr.trim() || (error instanceof Error ? error.message : String(error));
+
+  return message.split(/\r?\n/)[0];
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
