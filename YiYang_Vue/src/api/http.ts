@@ -1,3 +1,4 @@
+import axios, { AxiosError, type AxiosRequestConfig } from 'axios'
 import { API_BASE_URL } from '@/config/env'
 
 export interface HttpConfig {
@@ -6,27 +7,6 @@ export interface HttpConfig {
   data?: unknown
   params?: Record<string, unknown>
   headers?: Record<string, string>
-}
-
-function buildUrl(url: string, params?: Record<string, unknown>) {
-  const normalizedUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`
-
-  if (!params || Object.keys(params).length === 0) {
-    return normalizedUrl
-  }
-
-  const searchParams = new URLSearchParams()
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null || value === '') {
-      return
-    }
-
-    searchParams.append(key, String(value))
-  })
-
-  const query = searchParams.toString()
-  return query ? `${normalizedUrl}?${query}` : normalizedUrl
 }
 
 function getAuthToken() {
@@ -57,32 +37,63 @@ function resolveErrorMessage(payload: unknown) {
   return '请求失败'
 }
 
-export async function http<T = unknown>(config: HttpConfig) {
-  const { url, method = 'GET', data, params, headers = {} } = config
-  const requestUrl = buildUrl(url, params)
-  const token = getAuthToken()
-  const normalizedMethod = method.toUpperCase()
+const httpClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  paramsSerializer: {
+    serialize(params) {
+      const searchParams = new URLSearchParams()
 
-  const response = await fetch(requestUrl, {
-    method: normalizedMethod,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
+      Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') {
+          return
+        }
+
+        searchParams.append(key, String(value))
+      })
+
+      return searchParams.toString()
     },
-    body: data ? JSON.stringify(data) : undefined,
-  })
+  },
+})
 
-  const payload = await response.json().catch(() => null)
+httpClient.interceptors.request.use((config) => {
+  const token = getAuthToken()
 
-  if (!response.ok) {
-    const message = resolveErrorMessage(payload?.message ?? payload)
-    throw new Error(message)
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
 
-  return payload as {
-    code: number
-    message: string
-    data: T
+  return config
+})
+
+export async function http<T = unknown>(config: HttpConfig) {
+  const { url, method = 'GET', data, params, headers = {} } = config
+  const requestConfig: AxiosRequestConfig = {
+    url,
+    method,
+    data,
+    params,
+    headers,
+  }
+
+  try {
+    const response = await httpClient.request<{
+      code: number
+      message: string
+      data: T
+    }>(requestConfig)
+
+    return response.data
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const payload = error.response?.data
+      const message = resolveErrorMessage(payload?.message ?? payload)
+      throw new Error(message)
+    }
+
+    throw error
   }
 }
