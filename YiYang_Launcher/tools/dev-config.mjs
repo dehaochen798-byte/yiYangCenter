@@ -29,11 +29,11 @@ export const projectDirs = {
   root: rootDir,
   vue: resolveProjectDir(
     process.env.YIYANG_VUE_DIR || process.env.YIYANG_FRONTEND_DIR || localConfig.vueDir,
-    "YiYang_Vue",
+    "../YiYang_Vue",
   ),
   node: resolveProjectDir(
     process.env.YIYANG_NODE_DIR || process.env.YIYANG_BACKEND_DIR || localConfig.nodeDir,
-    "YiYang_Node",
+    "../YiYang_Node",
   ),
 };
 

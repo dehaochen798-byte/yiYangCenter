@@ -1,19 +1,20 @@
 # YiYang Center
 
-前后端同仓项目，当前包含：
+外层包装项目，当前包含：
 
 - `YiYang_Vue`：`Vue 3 + Vite + Pinia + Element Plus`
 - `YiYang_Node`：`NestJS + Prisma + MySQL`，已拆为 `gateway / service-auth / service-care`
+- `YiYang_Launcher`：一键启动、端口清理、Redis 检查和统一构建脚本
+- `docs`：项目说明、设计文档和模块熟悉指南
 
 ## 目录结构
 
 ```txt
 Zzz
+|- YiYang_Launcher/
 |- YiYang_Vue/
 |- YiYang_Node/
-|- tools/
-|- package.json
-`- README.md
+`- docs/
 ```
 
 ## 环境要求
@@ -35,7 +36,9 @@ mysql --version
 ### 1. 安装依赖
 
 ```bash
-npm install
+cd YiYang_Launcher && npm install
+cd ../YiYang_Vue && npm install
+cd ../YiYang_Node && npm install
 ```
 
 ### 2. 创建数据库
@@ -47,13 +50,13 @@ CREATE DATABASE yiyang_center CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ### 3. 配置后端环境变量
 
 ```bash
-cp YiYang_Node/.env.example YiYang_Node/.env
+cp ../YiYang_Node/.env.example ../YiYang_Node/.env
 ```
 
 PowerShell:
 
 ```powershell
-Copy-Item YiYang_Node\.env.example YiYang_Node\.env
+Copy-Item ..\YiYang_Node\.env.example ..\YiYang_Node\.env
 ```
 
 关键变量：
@@ -72,15 +75,16 @@ JWT_EXPIRES_IN="7d"
 ### 4. 生成 Prisma Client 并迁移数据库
 
 ```bash
-npm run prisma:generate -w YiYang_Node
-npm run prisma:migrate:dev -w YiYang_Node
-npm run db:seed -w YiYang_Node
+cd ../YiYang_Node
+npm run prisma:generate
+npm run prisma:migrate:dev
+npm run db:seed
 ```
 
 ### 5. 可选配置前端 API 地址
 
 ```bash
-cp YiYang_Vue/.env.example YiYang_Vue/.env
+cp ../YiYang_Vue/.env.example ../YiYang_Vue/.env
 ```
 
 默认值：
@@ -93,7 +97,7 @@ VITE_API_BASE_URL=http://localhost:3000
 
 ### 一键启动后端三服务
 
-在仓库根目录执行：
+在 `YiYang_Launcher` 目录执行：
 
 ```bash
 npm run dev:node
@@ -111,7 +115,7 @@ npm run dev:node
 
 ### 一键启动前后端
 
-在仓库根目录执行：
+在 `YiYang_Launcher` 目录执行：
 
 ```bash
 npm run dev
@@ -150,7 +154,8 @@ npm run format
 后端已内置 Nest CRUD 骨架生成器：
 
 ```bash
-npm run generate:module -w YiYang_Node -- --name resident-log --scope care --route resident-logs --fields title:string:required,age:number:optional,enabled:boolean:optional
+cd ../YiYang_Node
+npm run generate:module -- --name resident-log --scope care --route resident-logs --fields title:string:required,age:number:optional,enabled:boolean:optional
 ```
 
 生成内容包括：
@@ -177,5 +182,5 @@ npm run generate:module -w YiYang_Node -- --name resident-log --scope care --rou
 
 更多说明见：
 
-- [YiYang_Node/README.md](./YiYang_Node/README.md)
-- [YiYang_Vue/README.md](./YiYang_Vue/README.md)
+- [YiYang_Node/README.md](../YiYang_Node/README.md)
+- [YiYang_Vue/README.md](../YiYang_Vue/README.md)

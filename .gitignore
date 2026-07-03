@@ -15,7 +15,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
-tools/dev-projects.local.json
+YiYang_Launcher/tools/dev-projects.local.json
 
 # Editor / OS
 .DS_Store
