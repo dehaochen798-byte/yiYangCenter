@@ -9,6 +9,7 @@ export const CARE_PATTERNS = {
   usersList: { cmd: 'care.customer.users.list' },
   usersCreate: { cmd: 'care.customer.users.create' },
   usersUpdate: { cmd: 'care.customer.users.update' },
+  usersResetPassword: { cmd: 'care.customer.users.reset-password' },
   roomsList: { cmd: 'care.customer.rooms.list' },
   roomsCreate: { cmd: 'care.customer.rooms.create' },
   roomsUpdate: { cmd: 'care.customer.rooms.update' },

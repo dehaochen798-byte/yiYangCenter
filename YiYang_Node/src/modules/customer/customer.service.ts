@@ -45,6 +45,8 @@ function normalizeText(value?: string | null) {
   return value?.trim() || undefined
 }
 
+const DEFAULT_INITIAL_PASSWORD = '123456'
+
 @Injectable()
 export class CustomerService {
   constructor(
@@ -232,7 +234,7 @@ export class CustomerService {
     const user = await this.prisma.user.create({
       data: {
         mobile: payload.mobile.trim(),
-        passwordHash: await hash('123456', 10),
+        passwordHash: await hash(DEFAULT_INITIAL_PASSWORD, 10),
         realName: payload.realName.trim(),
         nickName: payload.realName.trim(),
         age: payload.age,
@@ -313,6 +315,40 @@ export class CustomerService {
     return {
       code: 200,
       message: '用户更新成功',
+      data: user,
+    }
+  }
+
+  async resetUserPassword(id: number) {
+    const exists = await this.prisma.user.findUnique({ where: { id } })
+
+    if (!exists) {
+      throw new NotFoundException('用户不存在')
+    }
+
+    const user = await this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash: await hash(DEFAULT_INITIAL_PASSWORD, 10),
+      },
+      select: {
+        id: true,
+        mobile: true,
+        realName: true,
+        nickName: true,
+        age: true,
+        gender: true,
+        status: true,
+        roleName: true,
+        departmentName: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+
+    return {
+      code: 200,
+      message: `密码已重置为 ${DEFAULT_INITIAL_PASSWORD}`,
       data: user,
     }
   }

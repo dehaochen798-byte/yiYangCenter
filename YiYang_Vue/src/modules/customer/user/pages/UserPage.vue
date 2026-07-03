@@ -88,9 +88,12 @@
             {{ formatDateTime(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEditUser(row)">编辑</el-button>
+            <el-button text type="warning" @click="handleResetPassword(row)">
+              重置密码
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -229,7 +232,7 @@
         </el-col>
       </el-row>
       <el-alert
-        title="新增员工账号默认写入临时密码占位，当前项目重点是业务闭环，后续可接重置密码流程。"
+        title="新增员工账号默认密码为 123456，忘记密码时可在列表中重置。"
         type="info"
         :closable="false"
         show-icon
@@ -251,13 +254,14 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createResident,
   createUser,
   getResidents,
   getUsers,
+  resetUserPassword,
   updateResident,
   updateUser,
   type ResidentItem,
@@ -530,6 +534,26 @@ async function submitUser() {
 
   closeDialog()
   resetCurrentForm()
+  await loadData()
+}
+
+async function handleResetPassword(row: UserItem) {
+  try {
+    await ElMessageBox.confirm(
+      `确定将「${row.realName}」的登录密码重置为 123456 吗？`,
+      '重置密码',
+      {
+        type: 'warning',
+        confirmButtonText: '确认重置',
+        cancelButtonText: '取消',
+      }
+    )
+  } catch {
+    return
+  }
+
+  await resetUserPassword(row.id)
+  ElMessage.success('密码已重置为 123456')
   await loadData()
 }
 </script>

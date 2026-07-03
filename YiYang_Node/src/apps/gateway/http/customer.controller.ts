@@ -86,6 +86,17 @@ export class CustomerController {
     return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersCreate, body)
   }
 
+  @Patch('users/:id/reset-password')
+  resetUserPassword(@Param('id') id: string) {
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.usersResetPassword,
+      {
+        id: Number(id),
+      }
+    )
+  }
+
   @Patch('users/:id')
   updateUser(@Param('id') id: string, @Body() body: SaveUserDto) {
     return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersUpdate, {

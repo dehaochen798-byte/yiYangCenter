@@ -36,3 +36,10 @@ export function updateUser(id: number, data: Partial<UserItem>) {
     data,
   })
 }
+
+export function resetUserPassword(id: number) {
+  return request<UserItem>({
+    url: `/api/customer/users/${id}/reset-password`,
+    method: 'patch',
+  })
+}

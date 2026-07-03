@@ -56,6 +56,11 @@ export class CustomerController {
     return this.customerService.createUser(body)
   }
 
+  @Patch('users/:id/reset-password')
+  resetUserPassword(@Param('id') id: string) {
+    return this.customerService.resetUserPassword(Number(id))
+  }
+
   @Patch('users/:id')
   updateUser(@Param('id') id: string, @Body() body: SaveUserDto) {
     return this.customerService.updateUser(Number(id), body)

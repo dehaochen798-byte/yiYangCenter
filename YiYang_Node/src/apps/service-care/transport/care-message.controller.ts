@@ -78,6 +78,11 @@ export class CareMessageController {
     return this.customerService.updateUser(payload.id, payload.data)
   }
 
+  @MessagePattern(CARE_PATTERNS.usersResetPassword)
+  resetUserPassword(payload: { id: number }) {
+    return this.customerService.resetUserPassword(payload.id)
+  }
+
   @MessagePattern(CARE_PATTERNS.roomsList)
   listRooms() {
     return this.customerService.listRooms()
