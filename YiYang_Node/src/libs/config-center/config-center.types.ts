@@ -30,6 +30,7 @@ export type AiProviderConfig = {
   apiKey: string
   baseUrl: string
   model: string
+  proxyUrl: string
 }
 
 export type RuntimeConfig = {

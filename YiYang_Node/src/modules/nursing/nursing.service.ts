@@ -12,6 +12,7 @@ type AiProviderConfig = {
   apiKey: string
   baseUrl: string
   model: string
+  proxyUrl: string
 }
 
 type OpenAiChatClient = {
@@ -40,7 +41,16 @@ type OpenAiClientConstructor = new (options: {
   baseURL: string
   maxRetries?: number
   timeout?: number
+  fetch?: typeof fetch
+  fetchOptions?: {
+    dispatcher?: unknown
+  }
 }) => OpenAiChatClient
+
+type UndiciModule = {
+  fetch: typeof fetch
+  ProxyAgent: new (proxyUrl: string) => unknown
+}
 
 type CareRecordAiResident = {
   fullName: string
@@ -92,6 +102,7 @@ export class NursingService {
       apiKey: '',
       baseUrl: 'https://open.bigmodel.cn/api/paas/v4/',
       model: 'GLM-4.7-flash',
+      proxyUrl: '',
     }
 
   }
@@ -529,11 +540,13 @@ export class NursingService {
 
     try {
       const { default: OpenAIClient } = await loadOpenAiSdk()
+      const proxyOptions = await createOpenAiProxyOptions(this.aiConfig.proxyUrl)
       this.openai = new OpenAIClient({
         apiKey: this.aiConfig.apiKey,
         baseURL: this.aiConfig.baseUrl,
         maxRetries: 0,
         timeout: 15000,
+        ...proxyOptions,
       })
     } catch (error) {
       throw new BadRequestException(`AI SDK 加载失败：${getAiErrorMessage(error)}`)
@@ -586,6 +599,24 @@ async function loadOpenAiSdk() {
   ) => Promise<{ default: OpenAiClientConstructor }>
 
   return importer('openai')
+}
+
+async function createOpenAiProxyOptions(proxyUrl: string) {
+  if (!proxyUrl) {
+    return {}
+  }
+
+  const importer = new Function('specifier', 'return import(specifier)') as (
+    specifier: string
+  ) => Promise<UndiciModule>
+  const { fetch: undiciFetch, ProxyAgent } = await importer('undici')
+
+  return {
+    fetch: undiciFetch,
+    fetchOptions: {
+      dispatcher: new ProxyAgent(proxyUrl),
+    },
+  }
 }
 
 function getAiErrorMessage(error: unknown) {

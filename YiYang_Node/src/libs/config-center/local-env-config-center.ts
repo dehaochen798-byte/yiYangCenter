@@ -99,6 +99,7 @@ export class LocalEnvConfigCenter implements ConfigCenter {
       apiKey: process.env.ZAI_API_KEY || process.env.BIGMODEL_API_KEY || '',
       baseUrl: process.env.ZAI_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4/',
       model: process.env.ZAI_MODEL || 'GLM-4.7-flash',
+      proxyUrl: process.env.ZAI_PROXY_URL || '',
     }
   }
 }

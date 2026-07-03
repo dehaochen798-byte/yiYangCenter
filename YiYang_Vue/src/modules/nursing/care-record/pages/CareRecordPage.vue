@@ -275,6 +275,8 @@ async function generateAiNote() {
 
     form.note = response.data.note
     ElMessage.success('AI护理小结已生成')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'AI护理小结生成失败')
   } finally {
     aiGenerating.value = false
   }
