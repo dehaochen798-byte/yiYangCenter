@@ -1,12 +1,13 @@
 import { spawn } from "node:child_process";
 import { ensureRedis } from "./ensure-redis.mjs";
+import { getProjectDir } from "./dev-config.mjs";
 import {
   backendPorts,
   findListeningProcesses,
   formatPortConflicts,
 } from "./dev-port-utils.mjs";
 
-const workspace = "YiYang_Node";
+const nodeDir = getProjectDir("node");
 const services = [
   {
     name: "gateway",
@@ -80,11 +81,11 @@ function spawnService(service) {
   const command = process.platform === "win32" ? "cmd.exe" : "npm";
   const args =
     process.platform === "win32"
-      ? ["/d", "/s", "/c", `npm run ${service.script} -w ${workspace}`]
-      : ["run", service.script, "-w", workspace];
+      ? ["/d", "/s", "/c", `npm run ${service.script}`]
+      : ["run", service.script];
 
   const child = spawn(command, args, {
-    cwd: process.cwd(),
+    cwd: nodeDir,
     stdio: ["inherit", "pipe", "pipe"],
     env: process.env,
   });

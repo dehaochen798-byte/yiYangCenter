@@ -1,17 +1,20 @@
 import { spawn } from "node:child_process";
 import { ensureRedis } from "./ensure-redis.mjs";
+import { getProjectDir, printProjectDirs } from "./dev-config.mjs";
 
 const services = [
   {
     name: "vue",
     command: "npm",
-    args: ["run", "dev:vue"],
+    args: ["run", "dev"],
+    cwd: getProjectDir("vue"),
     color: "\x1b[32m",
   },
   {
     name: "node",
-    command: "npm",
-    args: ["run", "dev:node"],
+    command: "node",
+    args: ["tools/dev-node-services.mjs"],
+    cwd: process.cwd(),
     color: "\x1b[36m",
   },
 ];
@@ -22,6 +25,7 @@ let shuttingDown = false;
 let hasPrintedVueUrl = false;
 
 await ensureRedis();
+printProjectDirs();
 
 function stripAnsi(text) {
   return text.replace(/\x1B\[[0-9;]*m/g, "");
@@ -97,7 +101,7 @@ function spawnService(service) {
       : service.args;
 
   const child = spawn(command, args, {
-    cwd: process.cwd(),
+    cwd: service.cwd,
     stdio: ["inherit", "pipe", "pipe"],
     env: process.env,
   });
