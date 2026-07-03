@@ -1,6 +1,11 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js'
-import { SaveCareItemDto, SaveCareLevelDto, SaveCareRecordDto } from './dto/nursing.dto.js'
+import {
+  GenerateCareRecordNoteDto,
+  SaveCareItemDto,
+  SaveCareLevelDto,
+  SaveCareRecordDto,
+} from './dto/nursing.dto.js'
 import { NursingService } from './nursing.service.js'
 
 @Controller('nursing')
@@ -51,6 +56,11 @@ export class NursingController {
   @Post('care-records')
   createCareRecord(@Body() body: SaveCareRecordDto) {
     return this.nursingService.createCareRecord(body)
+  }
+
+  @Post('care-records/ai-note')
+  generateCareRecordAiNote(@Body() body: GenerateCareRecordNoteDto) {
+    return this.nursingService.generateCareRecordAiNote(body)
   }
 
   @Patch('care-records/:id')

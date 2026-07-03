@@ -4,7 +4,6 @@
     title="退住登记"
     description="为当前在住客户办理退住，记录退住原因和交接说明。提交后系统自动释放床位并更新客户状态。"
     table-title="退住记录"
-    table-description="退住后床位立即回到空床池，可继续用于下一位客户入住。"
     :full-width="true"
   >
     <template #table-actions>

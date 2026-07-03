@@ -81,3 +81,25 @@ export class SaveCareRecordDto {
   @IsString()
   note?: string
 }
+
+export class GenerateCareRecordNoteDto {
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  residentId: number = 0
+
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  careItemId: number = 0
+
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  operatorId: number = 0
+
+  @IsString()
+  executedAt: string = nowIsoString()
+
+  @ToOptionalString()
+  @IsOptional()
+  @IsString()
+  note?: string
+}

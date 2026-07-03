@@ -1,5 +1,6 @@
 import type {
   ConfigCenter,
+  AiProviderConfig,
   DatabaseConfig,
   GatewayHttpConfig,
   JwtConfig,
@@ -39,6 +40,7 @@ export class LocalEnvConfigCenter implements ConfigCenter {
       database: this.getDatabaseConfig(),
       jwt: this.getJwtConfig(),
       messageBroker: this.getMessageBrokerConfig(),
+      ai: this.getAiProviderConfig(),
     }
   }
 
@@ -89,6 +91,14 @@ export class LocalEnvConfigCenter implements ConfigCenter {
     return {
       redisUrl: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
       streamKey: process.env.MESSAGE_STREAM_KEY || 'yiyang:domain-events',
+    }
+  }
+
+  getAiProviderConfig(): AiProviderConfig {
+    return {
+      apiKey: process.env.ZAI_API_KEY || process.env.BIGMODEL_API_KEY || '',
+      baseUrl: process.env.ZAI_BASE_URL || 'https://open.bigmodel.cn/api/paas/v4/',
+      model: process.env.ZAI_MODEL || 'GLM-4.7-flash',
     }
   }
 }

@@ -4,7 +4,6 @@
     title="护理内容配置"
     description="将护理内容挂到护理级别之下，配置频次、标准时长和执行说明，方便护理记录快速录入。"
     table-title="护理内容列表"
-    table-description="内容项属于某个护理级别，可作为护理包拆分的基础单元。"
     :full-width="true"
   >
     <template #table-actions>

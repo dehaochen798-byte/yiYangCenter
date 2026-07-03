@@ -4,7 +4,6 @@
     title="客户购买服务信息"
     description="记录客户购买或正在享受的服务内容，支持开始结束时间、状态和备注维护。"
     table-title="服务关注列表"
-    table-description="适合登记康复护理、专项陪护、营养管理等有周期的服务。"
     :full-width="true"
   >
     <template #table-actions>

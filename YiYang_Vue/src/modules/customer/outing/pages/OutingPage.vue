@@ -4,7 +4,6 @@
     title="外出登记"
     description="登记在住客户的外出与归院情况，支持预计归院时间、去向和原因维护。"
     table-title="外出记录"
-    table-description="未归院记录可直接点击归院登记，形成外出状态闭环。"
     :full-width="true"
   >
     <template #table-actions>

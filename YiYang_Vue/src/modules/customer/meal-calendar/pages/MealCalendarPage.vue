@@ -4,7 +4,6 @@
     title="每周伙食菜单"
     description="维护园区维度的每周菜单，支持周起始日期和每天菜单录入，为膳食公示和后续打印留基础数据。"
     table-title="周菜单列表"
-    table-description="当前按一周七天维护，可后续扩展到早餐/午餐/晚餐拆分。"
     :full-width="true"
   >
     <template #table-actions>

@@ -2,6 +2,8 @@ import { HttpException, HttpStatus } from '@nestjs/common'
 import { firstValueFrom, timeout } from 'rxjs'
 import type { ClientProxy } from '@nestjs/microservices'
 
+const TCP_MESSAGE_TIMEOUT_MS = 30000
+
 export async function sendTcpMessage<TResponse, TPayload>(
   client: ClientProxy,
   pattern: unknown,
@@ -11,13 +13,15 @@ export async function sendTcpMessage<TResponse, TPayload>(
 
   try {
     return await firstValueFrom(
-      client.send<TResponse, TPayload | Record<string, never>>(pattern, normalizedPayload).pipe(timeout(5000))
+      client
+        .send<TResponse, TPayload | Record<string, never>>(pattern, normalizedPayload)
+        .pipe(timeout(TCP_MESSAGE_TIMEOUT_MS))
     )
   } catch (error) {
     const payload = getRpcErrorPayload(error)
     const status = getHttpStatus(payload?.code)
 
-    throw new HttpException(payload?.message || 'Internal server error', status)
+    throw new HttpException(payload?.message || getFallbackErrorMessage(error), status)
   }
 }
 
@@ -85,4 +89,12 @@ function getHttpStatus(code: unknown) {
   return typeof code === 'number' && code >= 400 && code < 600
     ? code
     : HttpStatus.INTERNAL_SERVER_ERROR
+}
+
+function getFallbackErrorMessage(error: unknown) {
+  if (error instanceof Error && error.name === 'TimeoutError') {
+    return '服务响应超时，请稍后重试'
+  }
+
+  return 'Internal server error'
 }

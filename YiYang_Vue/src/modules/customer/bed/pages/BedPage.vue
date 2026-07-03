@@ -4,7 +4,6 @@
     title="房间与床位管理"
     description="在同一页面维护房间和床位，支持空床/占床状态查看，为入住登记提供即时可选床位。"
     table-title="床位总览"
-    table-description="按房间展示床位状态，已入住客户会直接显示在对应床位上。"
     :full-width="true"
   >
     <template #hero-extra>

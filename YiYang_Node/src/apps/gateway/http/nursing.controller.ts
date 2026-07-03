@@ -4,6 +4,7 @@ import { CARE_PATTERNS } from '../../../libs/contracts/care.contract.js'
 import { SERVICE_NAMES } from '../../../libs/registry/registry.types.js'
 import { GatewayServiceClient } from '../services/gateway-service-client.js'
 import {
+  GenerateCareRecordNoteDto,
   SaveCareItemDto,
   SaveCareLevelDto,
   SaveCareRecordDto,
@@ -89,6 +90,15 @@ export class NursingController {
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careRecordsCreate,
+      body
+    )
+  }
+
+  @Post('care-records/ai-note')
+  generateCareRecordAiNote(@Body() body: GenerateCareRecordNoteDto) {
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.careRecordsGenerateAiNote,
       body
     )
   }

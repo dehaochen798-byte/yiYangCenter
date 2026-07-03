@@ -40,6 +40,18 @@ export interface CareRecordItem {
   operator?: Pick<UserItem, 'id' | 'realName' | 'mobile' | 'roleName'>
 }
 
+export interface GenerateCareRecordNotePayload {
+  residentId?: number
+  careItemId?: number
+  operatorId?: number
+  executedAt?: string
+  note?: string
+}
+
+export interface GenerateCareRecordNoteResult {
+  note: string
+}
+
 export function getCareLevels() {
   return request<CareLevelItem[]>({
     url: '/api/nursing/care-levels',
@@ -102,6 +114,14 @@ export function updateCareRecord(id: number, data: Partial<CareRecordItem>) {
   return request<CareRecordItem>({
     url: `/api/nursing/care-records/${id}`,
     method: 'patch',
+    data,
+  })
+}
+
+export function generateCareRecordAiNote(data: GenerateCareRecordNotePayload) {
+  return request<GenerateCareRecordNoteResult>({
+    url: '/api/nursing/care-records/ai-note',
+    method: 'post',
     data,
   })
 }

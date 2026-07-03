@@ -4,7 +4,6 @@
     title="客户与健康管家关系"
     description="建立客户与服务人员的绑定关系，支持直接绑定员工账号，也保留姓名和手机号字段兼容线下录入场景。"
     table-title="服务对象关系"
-    table-description="建议优先选择系统内员工账号，形成更稳定的业务关联。"
     :full-width="true"
   >
     <template #table-actions>

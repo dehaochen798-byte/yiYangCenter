@@ -4,7 +4,6 @@
     title="护理级别定义"
     description="定义护理级别编码、名称和启停状态，客户档案和护理内容会直接引用这里的分级。"
     table-title="护理级别列表"
-    table-description="建议用编码区分失能等级、护理套餐或园区内部分层。"
     :full-width="true"
   >
     <template #table-actions>

@@ -4,7 +4,6 @@
     title="用户与客户档案"
     description="统一维护员工账号和养老客户档案。客户档案是入住、膳食、护理记录的基础主数据，员工账号则用于健康管家和护理执行人的绑定。"
     table-title="当前档案列表"
-    table-description="左侧支持切换员工账号和客户档案两类主数据。"
     :full-width="true"
   >
     <template #table-actions>

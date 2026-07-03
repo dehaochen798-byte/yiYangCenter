@@ -4,7 +4,6 @@
     title="客户膳食方案"
     description="为每位客户定制膳食方案，记录忌口、过敏源、营养标签与适用周期。"
     table-title="膳食方案列表"
-    table-description="一个客户可以拥有多个方案，用于不同阶段或特殊护理需求。"
     :full-width="true"
   >
     <template #table-actions>

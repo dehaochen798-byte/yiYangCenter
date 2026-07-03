@@ -4,7 +4,6 @@
     title="入住登记"
     description="为待入住客户分配床位，登记入住时间和备注。提交后客户状态会改为在住，床位自动变为占床。"
     table-title="入住记录"
-    table-description="仅可选择当前未分配床位的客户与空床，避免重复入住。"
     :full-width="true"
   >
     <template #table-actions>

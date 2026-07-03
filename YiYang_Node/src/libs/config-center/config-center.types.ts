@@ -26,6 +26,12 @@ export type MessageBrokerConfig = {
   streamKey: string
 }
 
+export type AiProviderConfig = {
+  apiKey: string
+  baseUrl: string
+  model: string
+}
+
 export type RuntimeConfig = {
   nodeEnv: string
   gateway: GatewayHttpConfig
@@ -33,6 +39,7 @@ export type RuntimeConfig = {
   database: DatabaseConfig
   jwt: JwtConfig
   messageBroker: MessageBrokerConfig
+  ai: AiProviderConfig
 }
 
 export interface ConfigCenter {
@@ -42,4 +49,5 @@ export interface ConfigCenter {
   getDatabaseConfig(): DatabaseConfig
   getJwtConfig(): JwtConfig
   getMessageBrokerConfig(): MessageBrokerConfig
+  getAiProviderConfig(): AiProviderConfig
 }

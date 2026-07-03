@@ -19,6 +19,7 @@ import type {
   SaveUserDto,
 } from '../../../modules/customer/dto/customer.dto.js'
 import type {
+  GenerateCareRecordNoteDto,
   SaveCareItemDto,
   SaveCareLevelDto,
   SaveCareRecordDto,
@@ -250,6 +251,11 @@ export class CareMessageController {
   @MessagePattern(CARE_PATTERNS.careRecordsCreate)
   createCareRecord(payload: SaveCareRecordDto) {
     return this.nursingService.createCareRecord(payload)
+  }
+
+  @MessagePattern(CARE_PATTERNS.careRecordsGenerateAiNote)
+  generateCareRecordAiNote(payload: GenerateCareRecordNoteDto) {
+    return this.nursingService.generateCareRecordAiNote(payload)
   }
 
   @MessagePattern(CARE_PATTERNS.careRecordsUpdate)

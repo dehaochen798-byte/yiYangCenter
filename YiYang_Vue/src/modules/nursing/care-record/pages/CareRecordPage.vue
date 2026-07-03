@@ -4,7 +4,6 @@
     title="护理记录录入"
     description="记录护理项目、执行人和执行时间，形成护理闭环。数据直接关联客户、护理内容和员工账号。"
     table-title="护理执行记录"
-    table-description="适合日常补录或柜台录入，后续可继续扩展移动端打卡。"
     :full-width="true"
   >
     <template #table-actions>
@@ -98,7 +97,24 @@
         />
       </el-form-item>
       <el-form-item label="执行备注">
-        <el-input v-model="form.note" type="textarea" :rows="4" placeholder="记录客户状态、异常情况或补充说明" />
+        <div class="note-field">
+          <div class="note-actions">
+            <el-button
+              type="primary"
+              plain
+              :loading="aiGenerating"
+              @click="generateAiNote"
+            >
+              AI生成护理小结
+            </el-button>
+          </div>
+          <el-input
+            v-model="form.note"
+            type="textarea"
+            :rows="4"
+            placeholder="记录客户状态、异常情况或补充说明"
+          />
+        </div>
       </el-form-item>
     </el-form>
 
@@ -118,6 +134,7 @@ import { ElMessage } from 'element-plus'
 import { getResidents, getUsers, type ResidentItem, type UserItem } from '@/modules/customer/api/customer.api'
 import {
   createCareRecord,
+  generateCareRecordAiNote,
   getCareItems,
   getCareRecords,
   updateCareRecord,
@@ -142,6 +159,7 @@ const residents = ref<ResidentItem[]>([])
 const careItems = ref<CareItemItem[]>([])
 const users = ref<UserItem[]>([])
 const dialogVisible = ref(false)
+const aiGenerating = ref(false)
 const form = reactive<CareRecordForm>(createForm())
 const dialogTitle = computed(() => (form.id ? '编辑护理记录' : '新建护理记录'))
 
@@ -230,6 +248,37 @@ async function submitForm() {
   resetForm()
   await loadData()
 }
+
+async function generateAiNote() {
+  const valid = validateFieldTypes([
+    { label: '客户', type: 'number', value: form.residentId },
+    { label: '护理项目', type: 'number', value: form.careItemId },
+    { label: '执行人', type: 'number', value: form.operatorId },
+    { label: '执行时间', type: 'datetime', value: form.executedAt },
+    { label: '执行备注', type: 'string', value: form.note, optional: true },
+  ])
+
+  if (!valid) {
+    return
+  }
+
+  aiGenerating.value = true
+
+  try {
+    const response = await generateCareRecordAiNote({
+      residentId: form.residentId || undefined,
+      careItemId: form.careItemId || undefined,
+      operatorId: form.operatorId || undefined,
+      executedAt: form.executedAt,
+      note: form.note,
+    })
+
+    form.note = response.data.note
+    ElMessage.success('AI护理小结已生成')
+  } finally {
+    aiGenerating.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -246,5 +295,15 @@ async function submitForm() {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
+}
+
+.note-field {
+  width: 100%;
+}
+
+.note-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 </style>

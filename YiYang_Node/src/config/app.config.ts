@@ -7,4 +7,5 @@ export default () => ({
   jwtSecret: configCenter.getJwtConfig().secret,
   jwtExpiresIn: configCenter.getJwtConfig().expiresIn,
   databaseUrl: configCenter.getDatabaseConfig().url,
+  ai: configCenter.getAiProviderConfig(),
 })

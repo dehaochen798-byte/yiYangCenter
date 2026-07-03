@@ -18,7 +18,6 @@
             <div class="crud-page-shell__section-header">
               <div>
                 <h3>{{ tableTitle }}</h3>
-                <p>{{ tableDescription }}</p>
               </div>
               <slot name="table-actions" />
             </div>
@@ -53,7 +52,6 @@ defineProps<{
   title: string
   description: string
   tableTitle: string
-  tableDescription: string
   formTitle?: string
   formDescription?: string
   fullWidth?: boolean
