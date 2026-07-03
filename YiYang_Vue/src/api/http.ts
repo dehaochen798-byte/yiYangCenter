@@ -91,7 +91,7 @@ export async function http<T = unknown>(config: HttpConfig) {
     if (error instanceof AxiosError) {
       const payload = error.response?.data
       const message = resolveErrorMessage(payload?.message ?? payload)
-      throw new Error(message)
+      throw new Error(message, { cause: error })
     }
 
     throw error

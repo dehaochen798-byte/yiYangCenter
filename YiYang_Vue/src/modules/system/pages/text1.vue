@@ -10,12 +10,11 @@
       <template #prepend>
         <el-select
           v-model="searchType"
+          style="width: 140px"
           value-key=""
           placeholder="请选择"
           clearable
           filterable
-          @change=""
-          style="width: 140px"
         >
           <el-option
             v-for="item in options"
@@ -39,7 +38,7 @@
         </template>
       </el-table-column>
     </el-table>
-    <el-button type="primary" size="default" @click="onAddItem()" style="width: 100%"
+    <el-button type="primary" size="default" style="width: 100%" @click="onAddItem()"
       >增加行</el-button
     >
   </div>
@@ -65,43 +64,6 @@ const showData = computed(() => {
     return tableData
   }
 })
-
-//树形假数据模版
-interface TreeNode {
-  id: number
-  parentId: number
-  label: string
-  children?: TreeNode[]
-}
-
-/**
- * 生成树形测试假数据
- * @param level 树最大层级
- * @param childCount 每一层子节点数量
- * @param parentId 父ID（递归内部使用，外部不用传）
- * @returns 标准树形数组
- */
-function generateTreeData(level: number, childCount: number, parentId = 0): TreeNode[] {
-  const tree: TreeNode[] = []
-  for (let i = 1; i <= childCount; i++) {
-    const id = parentId * 10 + i
-    // 显式标注 node 类型为 TreeNode，TS识别 children 是可选属性
-    const node: TreeNode = {
-      id,
-      parentId,
-      label: `节点-${parentId === 0 ? '根' : parentId}-${id}`,
-    }
-    if (level > 1) {
-      node.children = generateTreeData(level - 1, childCount, id)
-    }
-    tree.push(node)
-  }
-  return tree
-}
-
-// 使用示例
-const treeList = generateTreeData(3, 2)
-// console.log(treeList)
 
 // 定义列表项类型，可自行增删字段
 interface ListItem {
@@ -133,22 +95,14 @@ function generateMockList(count: number): ListItem[] {
   return list
 }
 
-// 使用
-console.log(tableData)
-
 //增删改查
 function onAddItem() {
   tableData.push(...generateMockList(1))
-  console.log('增加后', tableData)
 }
 function onDeleteItem(item: ListItem) {
-  console.log('item:', item)
   const deleteIndex = tableData.findIndex((data) => data.id === item.id)
   if (deleteIndex !== -1) {
     tableData.splice(deleteIndex, 1)
-    console.log('删除后：', tableData)
-  } else {
-    console.warn('没有找到删除对象：', item)
   }
 }
 function inputChange() {}
