@@ -15,6 +15,10 @@
     "dev:node": "node tools/dev-node-services.mjs",
     "build": "node tools/run-project-script.mjs vue build && node tools/run-project-script.mjs node build",
     "lint": "node tools/run-project-script.mjs vue lint && node tools/run-project-script.mjs node lint",
-    "format": "node tools/run-project-script.mjs vue format && node tools/run-project-script.mjs node format"
+    "format": "node tools/run-project-script.mjs vue format && node tools/run-project-script.mjs node format",
+    "smoke:front": "node tools/smoke-frontend-pages.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.61.1"
   }
 }
