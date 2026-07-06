@@ -91,6 +91,7 @@ function normalizeText(value?: string | null) {
 @Injectable()
 export class NursingService {
   private openai: OpenAiChatClient | null = null
+  private directOpenai: OpenAiChatClient | null = null
   private aiRequestQueue: Promise<unknown> = Promise.resolve()
   private readonly aiConfig: AiProviderConfig
 
@@ -538,21 +539,40 @@ export class NursingService {
       return this.openai
     }
 
+    this.openai = await this.createOpenAiClient(this.aiConfig.proxyUrl)
+
+    return this.openai
+  }
+
+  private async getDirectOpenAiClient() {
+    if (!this.aiConfig.apiKey) {
+      return null
+    }
+
+    if (this.directOpenai) {
+      return this.directOpenai
+    }
+
+    this.directOpenai = await this.createOpenAiClient('')
+
+    return this.directOpenai
+  }
+
+  private async createOpenAiClient(proxyUrl: string) {
     try {
       const { default: OpenAIClient } = await loadOpenAiSdk()
-      const proxyOptions = await createOpenAiProxyOptions(this.aiConfig.proxyUrl)
-      this.openai = new OpenAIClient({
+      const proxyOptions = await createOpenAiProxyOptions(proxyUrl)
+
+      return new OpenAIClient({
         apiKey: this.aiConfig.apiKey,
         baseURL: this.aiConfig.baseUrl,
         maxRetries: 0,
-        timeout: 15000,
+        timeout: 60000,
         ...proxyOptions,
       })
     } catch (error) {
       throw new BadRequestException(`AI SDK 加载失败：${getAiErrorMessage(error)}`)
     }
-
-    return this.openai
   }
 
   private async createAiCompletion(
@@ -565,24 +585,50 @@ export class NursingService {
     }
   ) {
     try {
-      return await openai.chat.completions.create({
-        model: this.aiConfig.model,
-        temperature: 0.3,
-        messages: [
-          {
-            role: 'system',
-            content:
-              '你是养老机构护理记录助手。请生成客观、简洁、可直接保存到护理记录备注栏的中文小结，不夸大诊断，不编造未提供的生命体征或病情。',
-          },
-          {
-            role: 'user',
-            content: this.buildCareRecordPrompt(payload, context),
-          },
-        ],
-      })
+      return await this.requestAiCompletion(openai, payload, context)
     } catch (error) {
+      if (this.aiConfig.proxyUrl && isAiConnectionError(error)) {
+        const directOpenai = await this.getDirectOpenAiClient()
+
+        if (directOpenai) {
+          try {
+            return await this.requestAiCompletion(directOpenai, payload, context)
+          } catch (directError) {
+            throw new BadRequestException(
+              `AI 护理小结生成失败：${getAiErrorMessage(directError)}`
+            )
+          }
+        }
+      }
+
       throw new BadRequestException(`AI 护理小结生成失败：${getAiErrorMessage(error)}`)
     }
+  }
+
+  private requestAiCompletion(
+    openai: OpenAiChatClient,
+    payload: GenerateCareRecordNoteDto,
+    context: {
+      resident: CareRecordAiResident
+      careItem: CareRecordAiCareItem
+      operator: CareRecordAiOperator
+    }
+  ) {
+    return openai.chat.completions.create({
+      model: this.aiConfig.model,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'system',
+          content:
+            '你是养老机构护理记录助手。请生成客观、简洁、可直接保存到护理记录备注栏的中文小结，不夸大诊断，不编造未提供的生命体征或病情。',
+        },
+        {
+          role: 'user',
+          content: this.buildCareRecordPrompt(payload, context),
+        },
+      ],
+    })
   }
 
   private enqueueAiRequest<T>(task: () => Promise<T>) {
@@ -629,7 +675,11 @@ function getAiErrorMessage(error: unknown) {
   }
 
   if (error instanceof Error && error.message) {
-    if (error.message === 'Connection error.' || error.message === 'Request timed out.') {
+    if (error.message === 'Request timed out.') {
+      return 'AI 服务响应超时，请稍后重试或切换更快的模型'
+    }
+
+    if (error.message === 'Connection error.') {
       return '无法连接到 BigModel API，请检查本机网络、代理或防火墙是否允许访问 open.bigmodel.cn:443'
     }
 
@@ -654,4 +704,11 @@ function getAiErrorMessage(error: unknown) {
   }
 
   return '未知错误'
+}
+
+function isAiConnectionError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.message === 'Connection error.' || error.message === 'Request timed out.')
+  )
 }

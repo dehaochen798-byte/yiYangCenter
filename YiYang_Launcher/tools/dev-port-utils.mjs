@@ -108,11 +108,19 @@ export function killListeningProcesses(targetPorts = backendPorts) {
 
   for (const pid of pids) {
     if (process.platform === 'win32') {
-      execFileSync('taskkill', ['/PID', String(pid), '/F'], { stdio: 'ignore' })
+      try {
+        execFileSync('taskkill', ['/PID', String(pid), '/F'], { stdio: 'ignore' })
+      } catch {
+        // The listener can disappear between netstat and taskkill during watch restarts.
+      }
       continue
     }
 
-    process.kill(pid, 'SIGTERM')
+    try {
+      process.kill(pid, 'SIGTERM')
+    } catch {
+      // The process may already have exited.
+    }
   }
 
   return records

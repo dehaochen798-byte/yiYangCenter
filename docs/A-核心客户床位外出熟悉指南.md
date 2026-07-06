@@ -57,6 +57,63 @@ A 组负责客户管理里最基础的资源部分：
 Vue 页面 -> 前端 API -> request/http -> gateway -> GatewayServiceClient -> LocalRegistryService -> service-care -> CustomerService -> Prisma -> MySQL
 ```
 
+## AI 调用模块位置
+
+当前项目里的 AI 调用功能是“护理记录 AI 小结”，入口不在 A 组客户页面里，而是在护理记录页面。A 组如果需要说明或排查 AI 接口，可以按下面这条链路找：
+
+```txt
+CareRecordPage.vue
+  -> nursing.api.ts
+  -> gateway nursing.controller.ts
+  -> GatewayServiceClient
+  -> service-care CareMessageController
+  -> NursingService.generateCareRecordAiNote()
+  -> OpenAI SDK chat.completions
+  -> BigModel / GLM 文本模型
+```
+
+关键文件位置：
+
+- 前端按钮和预览弹窗：
+  - `YiYang_Vue/src/modules/nursing/care-record/pages/CareRecordPage.vue`
+  - 点击 `AI生成护理小结` 后先生成内容，再弹出 `AI护理小结预览`，用户确认后才写回备注。
+- 前端接口封装：
+  - `YiYang_Vue/src/modules/nursing/api/nursing.api.ts`
+  - 方法：`generateCareRecordAiNote()`
+  - 请求地址：`POST /api/nursing/care-records/ai-note`
+- gateway HTTP 入口：
+  - `YiYang_Node/src/apps/gateway/http/nursing.controller.ts`
+  - 方法：`generateCareRecordAiNote()`
+- 微服务消息协议：
+  - `YiYang_Node/src/libs/contracts/care.contract.ts`
+  - pattern：`careRecordsGenerateAiNote`
+- service-care 接收端：
+  - `YiYang_Node/src/apps/service-care/transport/care-message.controller.ts`
+  - 方法：`generateCareRecordAiNote()`
+- AI 核心调用：
+  - `YiYang_Node/src/modules/nursing/nursing.service.ts`
+  - 方法：`generateCareRecordAiNote()`、`getOpenAiClient()`、`createAiCompletion()`
+  - SDK 调用：`openai.chat.completions.create(...)`
+- AI 配置读取：
+  - `YiYang_Node/src/libs/config-center/local-env-config-center.ts`
+  - 环境变量来自：`YiYang_Node/.env`
+
+AI 相关环境变量：
+
+```env
+ZAI_API_KEY="..."
+ZAI_BASE_URL="https://open.bigmodel.cn/api/paas/v4/"
+ZAI_MODEL="glm-4.7"
+ZAI_PROXY_URL=""
+```
+
+这里接的是 GLM 的 OpenAI 兼容文本对话模型，代码使用的是 `chat.completions`，所以同类别文本模型一般只需要改 `ZAI_MODEL`。如果改成图片、向量、语音等不同类别模型，就不能只改模型名，需要换接口和入参。
+
+注意：AI 生成可能比普通业务接口慢，当前后端已经把 AI SDK 超时和 gateway 到 service-care 的 TCP 响应超时调大，相关文件是：
+
+- `YiYang_Node/src/modules/nursing/nursing.service.ts`
+- `YiYang_Node/src/libs/microservices/client-proxy.util.ts`
+
 ## 消息中间件与审计日志
 
 A 组的床位和外出模块已经接入 Redis Stream 消息中间件，核心目的是异步记录关键业务操作：

@@ -2,7 +2,7 @@ import { HttpException, HttpStatus } from '@nestjs/common'
 import { firstValueFrom, timeout } from 'rxjs'
 import type { ClientProxy } from '@nestjs/microservices'
 
-const TCP_MESSAGE_TIMEOUT_MS = 30000
+const TCP_MESSAGE_TIMEOUT_MS = 90000
 
 export async function sendTcpMessage<TResponse, TPayload>(
   client: ClientProxy,

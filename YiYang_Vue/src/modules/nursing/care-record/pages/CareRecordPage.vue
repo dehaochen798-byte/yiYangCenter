@@ -127,6 +127,31 @@
       </div>
     </template>
   </el-dialog>
+
+  <el-dialog
+    v-model="aiPreviewVisible"
+    title="AI护理小结预览"
+    width="620px"
+    append-to-body
+  >
+    <el-form label-position="top" @submit.prevent>
+      <el-form-item label="小结内容">
+        <el-input
+          v-model="aiPreviewNote"
+          type="textarea"
+          :rows="6"
+          placeholder="可在保存前修改 AI 生成的小结"
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="closeAiPreview">取消</el-button>
+        <el-button type="primary" @click="applyAiNote">保存到备注</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -159,6 +184,8 @@ const residents = ref<ResidentItem[]>([])
 const careItems = ref<CareItemItem[]>([])
 const users = ref<UserItem[]>([])
 const dialogVisible = ref(false)
+const aiPreviewVisible = ref(false)
+const aiPreviewNote = ref('')
 const aiGenerating = ref(false)
 const form = reactive<CareRecordForm>(createForm())
 const dialogTitle = computed(() => (form.id ? '编辑护理记录' : '新建护理记录'))
@@ -192,6 +219,7 @@ async function loadData() {
 
 function resetForm() {
   Object.assign(form, createForm())
+  closeAiPreview()
 }
 
 function openCreateDialog() {
@@ -201,6 +229,17 @@ function openCreateDialog() {
 
 function closeDialog() {
   dialogVisible.value = false
+}
+
+function closeAiPreview() {
+  aiPreviewVisible.value = false
+  aiPreviewNote.value = ''
+}
+
+function applyAiNote() {
+  form.note = aiPreviewNote.value
+  closeAiPreview()
+  ElMessage.success('AI护理小结已保存到备注')
 }
 
 function startEdit(row: CareRecordItem) {
@@ -273,7 +312,8 @@ async function generateAiNote() {
       note: form.note,
     })
 
-    form.note = response.data.note
+    aiPreviewNote.value = response.data.note
+    aiPreviewVisible.value = true
     ElMessage.success('AI护理小结已生成')
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : 'AI护理小结生成失败')
