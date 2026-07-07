@@ -1,12 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
   UseGuards,
-  Delete,
 } from '@nestjs/common'
 import { GatewayJwtGuard } from '../security/gateway-jwt.guard.js'
 import { CARE_PATTERNS } from '../../../libs/contracts/care.contract.js'
@@ -174,6 +174,13 @@ export class CustomerController {
     })
   }
 
+  @Delete('meal-plans/:id')
+  deleteMealPlan(@Param('id') id: string) {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.mealPlansDelete, {
+      id: Number(id),
+    })
+  }
+
   @Get('meal-calendars')
   listMealCalendars() {
     return this.gatewayClient.send(
@@ -200,6 +207,17 @@ export class CustomerController {
       {
         id: Number(id),
         data: body,
+      }
+    )
+  }
+
+  @Delete('meal-calendars/:id')
+  deleteMealCalendar(@Param('id') id: string) {
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealCalendarsDelete,
+      {
+        id: Number(id),
       }
     )
   }

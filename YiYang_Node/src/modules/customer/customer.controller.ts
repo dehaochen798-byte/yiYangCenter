@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js'
 import {
   CreateCheckInDto,
@@ -111,6 +111,11 @@ export class CustomerController {
     return this.customerService.updateMealPlan(Number(id), body)
   }
 
+  @Delete('meal-plans/:id')
+  deleteMealPlan(@Param('id') id: string) {
+    return this.customerService.deleteMealPlan(Number(id))
+  }
+
   @Get('meal-calendars')
   listMealCalendars() {
     return this.customerService.listMealCalendars()
@@ -124,6 +129,11 @@ export class CustomerController {
   @Patch('meal-calendars/:id')
   updateMealCalendar(@Param('id') id: string, @Body() body: SaveMealCalendarDto) {
     return this.customerService.updateMealCalendar(Number(id), body)
+  }
+
+  @Delete('meal-calendars/:id')
+  deleteMealCalendar(@Param('id') id: string) {
+    return this.customerService.deleteMealCalendar(Number(id))
   }
 
   @Get('check-ins')

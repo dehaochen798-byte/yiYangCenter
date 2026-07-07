@@ -26,9 +26,10 @@
             {{ formatDate(row.startDate) }} - {{ formatDate(row.endDate) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
+            <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -101,10 +102,11 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createMealPlan,
+  deleteMealPlan,
   getMealPlans,
   updateMealPlan,
   type MealPlanItem,
@@ -179,6 +181,26 @@ function startEdit(row: MealPlanItem) {
     endDate: row.endDate || '',
   })
   dialogVisible.value = true
+}
+
+async function handleDelete(row: MealPlanItem) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${row.resident?.fullName || '该客户'} / ${row.title}」这条膳食方案吗？`,
+      '删除膳食方案',
+      {
+        type: 'warning',
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+      }
+    )
+  } catch {
+    return
+  }
+
+  await deleteMealPlan(row.id)
+  ElMessage.success('膳食方案删除成功')
+  await loadData()
 }
 
 async function submitForm() {

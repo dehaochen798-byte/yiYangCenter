@@ -26,9 +26,10 @@
         <el-table-column prop="friday" label="周五" min-width="160" show-overflow-tooltip />
         <el-table-column prop="saturday" label="周六" min-width="160" show-overflow-tooltip />
         <el-table-column prop="sunday" label="周日" min-width="160" show-overflow-tooltip />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
+            <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -76,10 +77,11 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createMealCalendar,
+  deleteMealCalendar,
   getMealCalendars,
   updateMealCalendar,
   type MealCalendarItem,
@@ -169,6 +171,26 @@ function startEdit(row: MealCalendarItem) {
     sunday: row.sunday || '',
   })
   dialogVisible.value = true
+}
+
+async function handleDelete(row: MealCalendarItem) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${row.weekLabel}」这条周菜单吗？`,
+      '删除周菜单',
+      {
+        type: 'warning',
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+      }
+    )
+  } catch {
+    return
+  }
+
+  await deleteMealCalendar(row.id)
+  ElMessage.success('周菜单删除成功')
+  await loadData()
 }
 
 async function submitForm() {

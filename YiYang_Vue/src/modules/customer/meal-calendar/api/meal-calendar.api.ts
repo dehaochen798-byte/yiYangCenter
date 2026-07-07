@@ -35,3 +35,10 @@ export function updateMealCalendar(id: number, data: Partial<MealCalendarItem>) 
     data,
   })
 }
+
+export function deleteMealCalendar(id: number) {
+  return request<void>({
+    url: `/api/customer/meal-calendars/${id}`,
+    method: 'delete',
+  })
+}

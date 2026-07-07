@@ -75,12 +75,14 @@ C 组负责客户的膳食和服务信息：
 - `GET /api/customer/meal-plans`
 - `POST /api/customer/meal-plans`
 - `PATCH /api/customer/meal-plans/:id`
+- `DELETE /api/customer/meal-plans/:id`
 
 每周菜单：
 
 - `GET /api/customer/meal-calendars`
 - `POST /api/customer/meal-calendars`
 - `PATCH /api/customer/meal-calendars/:id`
+- `DELETE /api/customer/meal-calendars/:id`
 
 服务对象：
 
@@ -94,25 +96,40 @@ C 组负责客户的膳食和服务信息：
 - `POST /api/customer/service-focuses`
 - `PATCH /api/customer/service-focuses/:id`
 
-合计 12 个接口。
+合计 14 个接口。
 
 ## 用了什么方法
 
 前端主要方法：
 
 - `getMealPlans()` / `createMealPlan()` / `updateMealPlan()`
+- `deleteMealPlan()`
 - `getMealCalendars()` / `createMealCalendar()` / `updateMealCalendar()`
+- `deleteMealCalendar()`
 - `getServiceTargets()` / `createServiceTarget()` / `updateServiceTarget()`
 - `getServiceFocuses()` / `createServiceFocus()` / `updateServiceFocus()`
 
 后端主要方法：
 
 - `listMealPlans()` / `createMealPlan()` / `updateMealPlan()`
+- `deleteMealPlan()`
 - `listMealCalendars()` / `createMealCalendar()` / `updateMealCalendar()`
+- `deleteMealCalendar()`
 - `listServiceTargets()` / `createServiceTarget()` / `updateServiceTarget()`
 - `listServiceFocuses()` / `createServiceFocus()` / `updateServiceFocus()`
 - `ensureResidentExists()`：确认客户存在
 - `ensureManagerExists()`：确认健康管家用户存在
+
+## 这次新增了什么
+
+膳食相关页面现在支持删除：
+
+1. 用户在 `MealPage.vue` 或 `MealCalendarPage.vue` 点击“删除”。
+2. 页面弹出确认框，确认后调用对应的删除方法。
+3. 前端分别请求 `DELETE /api/customer/meal-plans/:id` 和 `DELETE /api/customer/meal-calendars/:id`。
+4. 请求经过 gateway 转发到 `service-care`。
+5. `CustomerService.deleteMealPlan()` 或 `CustomerService.deleteMealCalendar()` 先校验记录是否存在。
+6. 校验通过后删除对应记录，页面刷新列表并提示成功。
 
 ## 数据库重点
 

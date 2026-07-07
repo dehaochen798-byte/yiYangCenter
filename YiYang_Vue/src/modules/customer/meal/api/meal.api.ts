@@ -35,3 +35,10 @@ export function updateMealPlan(id: number, data: Partial<MealPlanItem>) {
     data,
   })
 }
+
+export function deleteMealPlan(id: number) {
+  return request<void>({
+    url: `/api/customer/meal-plans/${id}`,
+    method: 'delete',
+  })
+}

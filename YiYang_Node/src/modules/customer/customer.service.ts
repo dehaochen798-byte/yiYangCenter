@@ -636,6 +636,25 @@ export class CustomerService {
     }
   }
 
+  async deleteMealPlan(id: number) {
+    const plan = await this.prisma.mealPlan.findUnique({
+      where: { id },
+    })
+
+    if (!plan) {
+      throw new NotFoundException('膳食方案不存在')
+    }
+
+    await this.prisma.mealPlan.delete({
+      where: { id },
+    })
+
+    return {
+      code: 200,
+      message: '膳食方案删除成功',
+    }
+  }
+
   async listMealCalendars() {
     const calendars = await this.prisma.mealCalendar.findMany({
       orderBy: {
@@ -694,6 +713,25 @@ export class CustomerService {
       code: 200,
       message: '周菜单更新成功',
       data: calendar,
+    }
+  }
+
+  async deleteMealCalendar(id: number) {
+    const calendar = await this.prisma.mealCalendar.findUnique({
+      where: { id },
+    })
+
+    if (!calendar) {
+      throw new NotFoundException('周菜单不存在')
+    }
+
+    await this.prisma.mealCalendar.delete({
+      where: { id },
+    })
+
+    return {
+      code: 200,
+      message: '周菜单删除成功',
     }
   }
 

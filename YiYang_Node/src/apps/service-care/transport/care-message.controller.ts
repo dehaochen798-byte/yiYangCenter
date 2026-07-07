@@ -133,6 +133,11 @@ export class CareMessageController {
     return this.customerService.updateMealPlan(payload.id, payload.data)
   }
 
+  @MessagePattern(CARE_PATTERNS.mealPlansDelete)
+  deleteMealPlan(payload: { id: number }) {
+    return this.customerService.deleteMealPlan(payload.id)
+  }
+
   @MessagePattern(CARE_PATTERNS.mealCalendarsList)
   listMealCalendars() {
     return this.customerService.listMealCalendars()
@@ -146,6 +151,11 @@ export class CareMessageController {
   @MessagePattern(CARE_PATTERNS.mealCalendarsUpdate)
   updateMealCalendar(payload: { id: number; data: SaveMealCalendarDto }) {
     return this.customerService.updateMealCalendar(payload.id, payload.data)
+  }
+
+  @MessagePattern(CARE_PATTERNS.mealCalendarsDelete)
+  deleteMealCalendar(payload: { id: number }) {
+    return this.customerService.deleteMealCalendar(payload.id)
   }
 
   @MessagePattern(CARE_PATTERNS.checkInsList)
