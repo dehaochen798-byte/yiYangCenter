@@ -875,6 +875,70 @@ export class CustomerService {
     }
   }
 
+  async deleteCheckIn(actor: Actor, id: number) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可删除入住登记')
+    const record = await this.prisma.checkIn.findUnique({
+      where: { id },
+      include: {
+        resident: true,
+        bed: true,
+      },
+    })
+
+    if (!record) {
+      throw new NotFoundException('入住记录不存在')
+    }
+
+    const latestCheckIn = await this.prisma.checkIn.findFirst({
+      where: {
+        residentId: record.residentId,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!latestCheckIn || latestCheckIn.id !== id) {
+      throw new BadRequestException('仅允许删除该客户最近一次入住登记')
+    }
+
+    if (
+      record.resident.status !== ResidenceStatus.ACTIVE ||
+      record.resident.currentBedId !== record.bedId
+    ) {
+      throw new BadRequestException('该入住记录已影响后续流程，请先处理对应退住登记')
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.checkIn.delete({
+        where: { id },
+      })
+
+      await tx.resident.update({
+        where: { id: record.residentId },
+        data: {
+          status: ResidenceStatus.PENDING,
+          currentBedId: null,
+        },
+      })
+
+      await tx.bed.update({
+        where: { id: record.bedId },
+        data: {
+          status: BedStatus.VACANT,
+        },
+      })
+    })
+
+    return {
+      code: 200,
+      message: '入住登记删除成功',
+    }
+  }
+
   async listCheckOuts(actor: Actor) {
     assertRole(actor, roomBedRoles, '仅管理员和前台人员可查看退住登记')
     const records = await this.prisma.checkOut.findMany({
@@ -947,6 +1011,87 @@ export class CustomerService {
       code: 201,
       message: '退住登记成功',
       data: record,
+    }
+  }
+
+  async deleteCheckOut(actor: Actor, id: number) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可删除退住登记')
+    const record = await this.prisma.checkOut.findUnique({
+      where: { id },
+      include: {
+        resident: true,
+        bed: {
+          include: {
+            currentResident: true,
+          },
+        },
+      },
+    })
+
+    if (!record) {
+      throw new NotFoundException('退住记录不存在')
+    }
+
+    if (!record.bedId || !record.bed) {
+      throw new BadRequestException('该退住记录缺少原床位信息，无法删除')
+    }
+
+    const bedId = record.bedId
+    const latestCheckOut = await this.prisma.checkOut.findFirst({
+      where: {
+        residentId: record.residentId,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!latestCheckOut || latestCheckOut.id !== id) {
+      throw new BadRequestException('仅允许删除该客户最近一次退住登记')
+    }
+
+    if (
+      record.resident.status !== ResidenceStatus.CHECKED_OUT ||
+      record.resident.currentBedId !== null
+    ) {
+      throw new BadRequestException('该退住记录已影响后续流程，无法直接删除')
+    }
+
+    if (record.bed.isDelete) {
+      throw new BadRequestException('原床位已删除，无法恢复该退住登记')
+    }
+
+    if (record.bed.currentResident || record.bed.status !== BedStatus.VACANT) {
+      throw new BadRequestException('原床位当前不可恢复，请先处理床位占用状态')
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.checkOut.delete({
+        where: { id },
+      })
+
+      await tx.resident.update({
+        where: { id: record.residentId },
+        data: {
+          status: ResidenceStatus.ACTIVE,
+          currentBedId: bedId,
+        },
+      })
+
+      await tx.bed.update({
+        where: { id: bedId },
+        data: {
+          status: BedStatus.OCCUPIED,
+        },
+      })
+    })
+
+    return {
+      code: 200,
+      message: '退住登记删除成功',
     }
   }
 

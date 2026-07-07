@@ -330,6 +330,16 @@ export class CustomerController {
     )
   }
 
+  @Delete('check-ins/:id')
+  deleteCheckIn(@Req() request: GatewayRequest, @Param('id') id: string) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkInsDelete,
+      this.gatewayClient.withActorAndId(request.user, Number(id))
+    )
+  }
+
   @Get('check-outs')
   listCheckOuts(@Req() request: GatewayRequest) {
     assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
@@ -347,6 +357,16 @@ export class CustomerController {
       SERVICE_NAMES.care,
       CARE_PATTERNS.checkOutsCreate,
       this.gatewayClient.withActor(request.user, body)
+    )
+  }
+
+  @Delete('check-outs/:id')
+  deleteCheckOut(@Req() request: GatewayRequest, @Param('id') id: string) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkOutsDelete,
+      this.gatewayClient.withActorAndId(request.user, Number(id))
     )
   }
 

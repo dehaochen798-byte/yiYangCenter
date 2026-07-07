@@ -161,6 +161,11 @@ export class CustomerController {
     return this.customerService.createCheckIn(request.user, body)
   }
 
+  @Delete('check-ins/:id')
+  deleteCheckIn(@Req() request: AuthRequest, @Param('id') id: string) {
+    return this.customerService.deleteCheckIn(request.user, Number(id))
+  }
+
   @Get('check-outs')
   listCheckOuts(@Req() request: AuthRequest) {
     return this.customerService.listCheckOuts(request.user)
@@ -169,6 +174,11 @@ export class CustomerController {
   @Post('check-outs')
   createCheckOut(@Req() request: AuthRequest, @Body() body: CreateCheckOutDto) {
     return this.customerService.createCheckOut(request.user, body)
+  }
+
+  @Delete('check-outs/:id')
+  deleteCheckOut(@Req() request: AuthRequest, @Param('id') id: string) {
+    return this.customerService.deleteCheckOut(request.user, Number(id))
   }
 
   @Get('outings')

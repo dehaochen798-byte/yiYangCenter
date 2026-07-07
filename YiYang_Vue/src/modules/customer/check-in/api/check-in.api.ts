@@ -25,3 +25,10 @@ export function createCheckIn(data: Partial<CheckInItem>) {
     data,
   })
 }
+
+export function deleteCheckIn(id: number) {
+  return request<void>({
+    url: `/api/customer/check-ins/${id}`,
+    method: 'delete',
+  })
+}

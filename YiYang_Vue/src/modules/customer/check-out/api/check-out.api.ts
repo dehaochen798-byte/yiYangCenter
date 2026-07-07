@@ -26,3 +26,10 @@ export function createCheckOut(data: Partial<CheckOutItem>) {
     data,
   })
 }
+
+export function deleteCheckOut(id: number) {
+  return request<void>({
+    url: `/api/customer/check-outs/${id}`,
+    method: 'delete',
+  })
+}

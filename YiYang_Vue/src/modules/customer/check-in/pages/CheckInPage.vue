@@ -26,6 +26,11 @@
           <template #default="{ row }">{{ formatDateTime(row.checkInAt) }}</template>
         </el-table-column>
         <el-table-column prop="note" label="备注" min-width="220" show-overflow-tooltip />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </template>
 
@@ -82,10 +87,15 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import { getBeds, type BedItem } from '@/modules/customer/bed/api'
-import { createCheckIn, getCheckIns, type CheckInItem } from '@/modules/customer/check-in/api'
+import {
+  createCheckIn,
+  deleteCheckIn,
+  getCheckIns,
+  type CheckInItem,
+} from '@/modules/customer/check-in/api'
 import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDateTime } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
@@ -135,6 +145,26 @@ async function loadData() {
   checkIns.value = checkInRes.data
   residents.value = residentRes.data
   beds.value = bedRes.data
+}
+
+async function handleDelete(row: CheckInItem) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${row.resident?.fullName || '该客户'}」这条入住登记吗？删除后会同步释放床位并将客户恢复为待入住。`,
+      '删除入住登记',
+      {
+        type: 'warning',
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+      }
+    )
+  } catch {
+    return
+  }
+
+  await deleteCheckIn(row.id)
+  ElMessage.success('入住登记删除成功')
+  await loadData()
 }
 
 async function submitForm() {

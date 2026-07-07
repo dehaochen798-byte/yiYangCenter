@@ -27,6 +27,11 @@
         </el-table-column>
         <el-table-column prop="reason" label="退住原因" min-width="180" show-overflow-tooltip />
         <el-table-column prop="handoverNote" label="交接说明" min-width="220" show-overflow-tooltip />
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </template>
 
@@ -76,10 +81,11 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createCheckOut,
+  deleteCheckOut,
   getCheckOuts,
   type CheckOutItem,
 } from '@/modules/customer/check-out/api'
@@ -123,6 +129,26 @@ async function loadData() {
   const [checkOutRes, residentRes] = await Promise.all([getCheckOuts(), getResidents()])
   checkOuts.value = checkOutRes.data
   residents.value = residentRes.data
+}
+
+async function handleDelete(row: CheckOutItem) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${row.resident?.fullName || '该客户'}」这条退住登记吗？删除后会恢复客户在住状态，并重新占用原床位。`,
+      '删除退住登记',
+      {
+        type: 'warning',
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+      }
+    )
+  } catch {
+    return
+  }
+
+  await deleteCheckOut(row.id)
+  ElMessage.success('退住登记删除成功')
+  await loadData()
 }
 
 async function submitForm() {

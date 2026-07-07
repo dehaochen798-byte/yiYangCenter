@@ -174,6 +174,11 @@ export class CareMessageController {
     return this.customerService.createCheckIn(payload.actor, payload.data)
   }
 
+  @MessagePattern(CARE_PATTERNS.checkInsDelete)
+  deleteCheckIn(payload: ActorIdPayload) {
+    return this.customerService.deleteCheckIn(payload.actor, payload.id)
+  }
+
   @MessagePattern(CARE_PATTERNS.checkOutsList)
   listCheckOuts(payload: ActorOnlyPayload) {
     return this.customerService.listCheckOuts(payload.actor)
@@ -182,6 +187,11 @@ export class CareMessageController {
   @MessagePattern(CARE_PATTERNS.checkOutsCreate)
   createCheckOut(payload: ActorPayload<CreateCheckOutDto>) {
     return this.customerService.createCheckOut(payload.actor, payload.data)
+  }
+
+  @MessagePattern(CARE_PATTERNS.checkOutsDelete)
+  deleteCheckOut(payload: ActorIdPayload) {
+    return this.customerService.deleteCheckOut(payload.actor, payload.id)
   }
 
   @MessagePattern(CARE_PATTERNS.outingsList)
