@@ -40,9 +40,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="note" label="备注" min-width="220" show-overflow-tooltip />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
+            <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -155,10 +156,11 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getResidents, getUsers, type ResidentItem, type UserItem } from '@/modules/customer/api/customer.api'
 import {
   createCareRecord,
+  deleteCareRecord,
   generateCareRecordAiNote,
   getCareItems,
   getCareRecords,
@@ -252,6 +254,26 @@ function startEdit(row: CareRecordItem) {
     note: row.note || '',
   })
   dialogVisible.value = true
+}
+
+async function handleDelete(row: CareRecordItem) {
+  try {
+    await ElMessageBox.confirm(
+      `确定删除「${row.resident?.fullName || '该客户'} / ${row.careItem?.name || '该护理项目'}」这条护理记录吗？`,
+      '删除护理记录',
+      {
+        type: 'warning',
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+      }
+    )
+  } catch {
+    return
+  }
+
+  await deleteCareRecord(row.id)
+  ElMessage.success('护理记录删除成功')
+  await loadData()
 }
 
 async function submitForm() {

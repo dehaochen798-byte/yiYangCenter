@@ -379,6 +379,25 @@ export class NursingService {
     }
   }
 
+  async deleteCareRecord(id: number) {
+    const record = await this.prisma.careRecord.findUnique({
+      where: { id },
+    })
+
+    if (!record) {
+      throw new NotFoundException('护理记录不存在')
+    }
+
+    await this.prisma.careRecord.delete({
+      where: { id },
+    })
+
+    return {
+      code: 200,
+      message: '护理记录删除成功',
+    }
+  }
+
   async generateCareRecordAiNote(payload: GenerateCareRecordNoteDto) {
     const openai = await this.getOpenAiClient()
 

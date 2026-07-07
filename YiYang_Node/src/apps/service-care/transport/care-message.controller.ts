@@ -267,4 +267,9 @@ export class CareMessageController {
   updateCareRecord(payload: { id: number; data: SaveCareRecordDto }) {
     return this.nursingService.updateCareRecord(payload.id, payload.data)
   }
+
+  @MessagePattern(CARE_PATTERNS.careRecordsDelete)
+  deleteCareRecord(payload: { id: number }) {
+    return this.nursingService.deleteCareRecord(payload.id)
+  }
 }

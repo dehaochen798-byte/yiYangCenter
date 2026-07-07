@@ -87,8 +87,9 @@ B 组负责护理模块：
 - `GET /api/nursing/care-records`
 - `POST /api/nursing/care-records`
 - `PATCH /api/nursing/care-records/:id`
+- `DELETE /api/nursing/care-records/:id`
 
-合计 10 个接口。
+合计 11 个接口。
 
 ## 用了什么方法
 
@@ -103,16 +104,28 @@ B 组负责护理模块：
 - `getCareRecords()`：查询护理记录
 - `createCareRecord()`：新增护理记录
 - `updateCareRecord()`：修改护理记录
+- `deleteCareRecord()`：删除护理记录
 
 后端主要方法：
 
 - `listCareLevels()` / `createCareLevel()` / `updateCareLevel()`
 - `listCareItems()` / `createCareItem()` / `updateCareItem()`
-- `listCareRecords()` / `createCareRecord()` / `updateCareRecord()`
+- `listCareRecords()` / `createCareRecord()` / `updateCareRecord()` / `deleteCareRecord()`
 - `ensureCareLevelExists()`：确认护理级别存在
 - `ensureCareItemExists()`：确认护理内容存在
 - `ensureResidentExists()`：确认客户存在
 - `ensureUserExists()`：确认执行员工存在
+
+## 这次新增了什么
+
+护理记录页面现在支持删除：
+
+1. 用户在 `CareRecordPage.vue` 点击“删除”。
+2. 页面弹出确认框，确认后调用 `deleteCareRecord()`。
+3. 前端请求 `DELETE /api/nursing/care-records/:id`。
+4. 请求经过 gateway 转发到 `service-care`。
+5. `NursingService.deleteCareRecord()` 校验记录是否存在。
+6. 校验通过后删除对应 `CareRecord`，页面刷新列表并提示成功。
 
 ## 数据库重点
 

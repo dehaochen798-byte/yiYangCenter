@@ -118,6 +118,13 @@ export function updateCareRecord(id: number, data: Partial<CareRecordItem>) {
   })
 }
 
+export function deleteCareRecord(id: number) {
+  return request<void>({
+    url: `/api/nursing/care-records/${id}`,
+    method: 'delete',
+  })
+}
+
 export function generateCareRecordAiNote(data: GenerateCareRecordNotePayload) {
   return request<GenerateCareRecordNoteResult>({
     url: '/api/nursing/care-records/ai-note',

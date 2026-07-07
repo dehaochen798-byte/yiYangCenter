@@ -46,6 +46,7 @@ export const CARE_PATTERNS = {
   careRecordsList: { cmd: 'care.nursing.records.list' },
   careRecordsCreate: { cmd: 'care.nursing.records.create' },
   careRecordsUpdate: { cmd: 'care.nursing.records.update' },
+  careRecordsDelete: { cmd: 'care.nursing.records.delete' },
   careRecordsGenerateAiNote: { cmd: 'care.nursing.records.generate-ai-note' },
 } as const
 

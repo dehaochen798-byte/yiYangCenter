@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
 import { GatewayJwtGuard } from '../security/gateway-jwt.guard.js'
 import { CARE_PATTERNS } from '../../../libs/contracts/care.contract.js'
 import { SERVICE_NAMES } from '../../../libs/registry/registry.types.js'
@@ -108,6 +108,13 @@ export class NursingController {
     return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.careRecordsUpdate, {
       id: Number(id),
       data: body,
+    })
+  }
+
+  @Delete('care-records/:id')
+  deleteCareRecord(@Param('id') id: string) {
+    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.careRecordsDelete, {
+      id: Number(id),
     })
   }
 }
