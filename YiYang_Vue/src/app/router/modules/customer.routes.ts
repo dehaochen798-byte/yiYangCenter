@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
+import { ROLE_KEYS } from '@/constants/rbac'
 
 export const customerRoutes: RouteRecordRaw[] = [
   {
@@ -16,6 +17,27 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '工作台',
           menuKey: '/dashboard',
+          roles: Object.values(ROLE_KEYS),
+        },
+      },
+      {
+        path: 'customer/residents',
+        name: 'customer-residents',
+        component: () => import('@/modules/customer/resident/pages/ResidentPage.vue'),
+        meta: {
+          title: '客户档案',
+          menuKey: '/customer/residents',
+          roles: Object.values(ROLE_KEYS),
+        },
+      },
+      {
+        path: 'customer/users',
+        name: 'customer-users',
+        component: () => import('@/modules/customer/user/pages/UserAccountPage.vue'),
+        meta: {
+          title: '员工账号',
+          menuKey: '/customer/users',
+          roles: [ROLE_KEYS.ADMIN],
         },
       },
       {
@@ -25,6 +47,7 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '床位管理',
           menuKey: '/customer/bed',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK],
         },
       },
       {
@@ -34,6 +57,7 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '膳食管理',
           menuKey: '/customer/meal',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MEAL_MANAGER],
         },
       },
       {
@@ -44,6 +68,7 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '膳食日历',
           menuKey: '/customer/meal-calendar',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MEAL_MANAGER],
         },
       },
       {
@@ -53,6 +78,7 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '入住登记',
           menuKey: '/customer/check-in',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK],
         },
       },
       {
@@ -62,6 +88,7 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '退住登记',
           menuKey: '/customer/check-out',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK],
         },
       },
       {
@@ -71,6 +98,7 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '外出登记',
           menuKey: '/customer/outing',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK],
         },
       },
       {
@@ -79,8 +107,9 @@ export const customerRoutes: RouteRecordRaw[] = [
         component: () =>
           import('@/modules/customer/service-target/pages/ServiceTargetPage.vue'),
         meta: {
-          title: '设置服务对象',
+          title: '服务对象分配',
           menuKey: '/customer/service-target',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR],
         },
       },
       {
@@ -91,15 +120,7 @@ export const customerRoutes: RouteRecordRaw[] = [
         meta: {
           title: '服务关注',
           menuKey: '/customer/service-focus',
-        },
-      },
-      {
-        path: 'customer/user',
-        name: 'customer-user',
-        component: () => import('@/modules/customer/user/pages/UserPage.vue'),
-        meta: {
-          title: '用户管理',
-          menuKey: '/customer/user',
+          roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_STAFF],
         },
       },
     ],

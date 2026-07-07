@@ -4,6 +4,7 @@ import { compare, hash } from 'bcryptjs'
 import { PrismaService } from '../../prisma/prisma.service.js'
 import { LoginDto } from './dto/login.dto.js'
 import { RegisterDto } from './dto/register.dto.js'
+import { resolveRoleKey } from '../../common/rbac/rbac.util.js'
 
 const DEFAULT_INITIAL_PASSWORD = '123456'
 const LEGACY_TEMP_PASSWORD_HASH = 'TEMP_PASSWORD_HASH'
@@ -106,6 +107,8 @@ export class AuthService {
           nickName: user.nickName,
           age: user.age,
           gender: user.gender,
+          roleName: user.roleName,
+          roleKey: resolveRoleKey(user.roleName),
         },
       },
     }

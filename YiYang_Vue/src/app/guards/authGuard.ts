@@ -1,5 +1,6 @@
 import type { Router } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store/auth.store'
+import { canAccessRoles } from '@/utils/permission'
 
 export function setupAuthGuard(router: Router) {
   router.beforeEach((to) => {
@@ -20,6 +21,17 @@ export function setupAuthGuard(router: Router) {
       (to.path === '/auth/login' || to.path === '/auth/register')
     ) {
       return '/dashboard'
+    }
+
+    if (requiresAuth) {
+      const allowedRoles = to.matched.flatMap((record) => {
+        const roles = record.meta.roles
+        return Array.isArray(roles) ? roles : []
+      })
+
+      if (allowedRoles.length > 0 && !canAccessRoles(authStore.profile, allowedRoles)) {
+        return '/403'
+      }
     }
 
     return true

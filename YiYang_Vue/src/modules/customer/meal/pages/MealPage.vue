@@ -8,7 +8,7 @@
   >
     <template #table-actions>
       <div class="table-toolbar">
-        <el-button type="primary" @click="openCreateDialog">新建膳食方案</el-button>
+        <el-button v-if="canEdit" type="primary" @click="openCreateDialog">新建膳食方案</el-button>
       </div>
     </template>
 
@@ -26,7 +26,7 @@
             {{ formatDate(row.startDate) }} - {{ formatDate(row.endDate) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column v-if="canEdit" label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
             <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
@@ -103,6 +103,8 @@
 
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ROLE_KEYS } from '@/constants/rbac'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createMealPlan,
@@ -132,6 +134,12 @@ const residents = ref<ResidentItem[]>([])
 const dialogVisible = ref(false)
 const form = reactive<MealPlanForm>(createForm())
 const dialogTitle = computed(() => (form.id ? '编辑膳食方案' : '新建膳食方案'))
+const authStore = useAuthStore()
+const canEdit = computed(
+  () =>
+    authStore.profile?.roleKey === ROLE_KEYS.ADMIN ||
+    authStore.profile?.roleKey === ROLE_KEYS.MEAL_MANAGER
+)
 
 onMounted(loadData)
 

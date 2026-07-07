@@ -1,8 +1,8 @@
 <template>
   <CrudPageShell
     eyebrow="service target"
-    title="客户与健康管家关系"
-    description="建立客户与服务人员的绑定关系，支持直接绑定员工账号，也保留姓名和手机号字段兼容线下录入场景。"
+    title="服务对象分配"
+    description="建立客户与负责服务人员的绑定关系，为护理负责老人数据范围提供来源。"
     table-title="服务对象关系"
     :full-width="true"
   >
@@ -17,7 +17,7 @@
         <el-table-column label="客户" min-width="120">
           <template #default="{ row }">{{ row.resident?.fullName || '--' }}</template>
         </el-table-column>
-        <el-table-column label="健康管家" min-width="140">
+        <el-table-column label="负责人员" min-width="140">
           <template #default="{ row }">{{ row.managerUser?.realName || row.managerName }}</template>
         </el-table-column>
         <el-table-column prop="managerMobile" label="联系电话" min-width="140" />
@@ -55,7 +55,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="系统内健康管家">
+      <el-form-item label="系统内负责人员">
         <el-select v-model="form.managerUserId" class="full-width" clearable filterable @change="fillManagerFromUser">
           <el-option
             v-for="user in users"
@@ -67,7 +67,7 @@
       </el-form-item>
       <el-row :gutter="12">
         <el-col :span="12">
-          <el-form-item label="健康管家姓名">
+          <el-form-item label="负责人员姓名">
             <el-input v-model="form.managerName" placeholder="可手工录入" />
           </el-form-item>
         </el-col>

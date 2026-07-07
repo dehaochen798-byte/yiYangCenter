@@ -20,6 +20,13 @@ export interface AuthProfile {
   nickName: string
   age: number
   gender: 'MALE' | 'FEMALE'
+  roleName?: string | null
+  roleKey?:
+    | 'ADMIN'
+    | 'NURSING_SUPERVISOR'
+    | 'NURSING_STAFF'
+    | 'FRONT_DESK'
+    | 'MEAL_MANAGER'
 }
 
 export interface LoginResponse {

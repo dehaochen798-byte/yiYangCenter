@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Req,
   UseGuards,
 } from '@nestjs/common'
 import { GatewayJwtGuard } from '../security/gateway-jwt.guard.js'
@@ -26,6 +27,13 @@ import {
   SaveServiceTargetDto,
   SaveUserDto,
 } from '../../../modules/customer/dto/customer.dto.js'
+import type { Actor } from '../../../common/rbac/rbac.types.js'
+import {
+  assertGatewayRole,
+  gatewayRoleMatrix,
+} from '../security/gateway-rbac.util.js'
+
+type GatewayRequest = { user: Actor }
 
 @Controller('customer')
 @UseGuards(GatewayJwtGuard)
@@ -33,306 +41,423 @@ export class CustomerController {
   constructor(private readonly gatewayClient: GatewayServiceClient) {}
 
   @Get('modules')
-  getModules() {
+  getModules(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.dashboard)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.customerModules,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Get('overview')
-  getOverview() {
+  getOverview(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.dashboard)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.customerOverview,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Get('residents')
-  listResidents() {
+  listResidents(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.residentReadAll,
+      ...gatewayRoleMatrix.residentReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.residentsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('residents')
-  createResident(@Body() body: SaveResidentDto) {
+  createResident(@Req() request: GatewayRequest, @Body() body: SaveResidentDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.residentWrite)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.residentsCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('residents/:id')
-  updateResident(@Param('id') id: string, @Body() body: SaveResidentDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.residentsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateResident(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveResidentDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.residentWrite)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.residentsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Get('users')
-  listUsers() {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersList, undefined)
+  listUsers(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.userAdmin)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.usersList,
+      this.gatewayClient.withActorOnly(request.user)
+    )
   }
 
   @Post('users')
-  createUser(@Body() body: SaveUserDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersCreate, body)
+  createUser(@Req() request: GatewayRequest, @Body() body: SaveUserDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.userAdmin)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.usersCreate,
+      this.gatewayClient.withActor(request.user, body)
+    )
   }
 
   @Patch('users/:id/reset-password')
-  resetUserPassword(@Param('id') id: string) {
+  resetUserPassword(@Req() request: GatewayRequest, @Param('id') id: string) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.userAdmin)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.usersResetPassword,
-      {
-        id: Number(id),
-      }
+      this.gatewayClient.withActorAndId(request.user, Number(id))
     )
   }
 
   @Patch('users/:id')
-  updateUser(@Param('id') id: string, @Body() body: SaveUserDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.usersUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateUser(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveUserDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.userAdmin)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.usersUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Get('rooms')
-  listRooms() {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.roomsList, undefined)
+  listRooms(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.roomsList,
+      this.gatewayClient.withActorOnly(request.user)
+    )
   }
 
   @Post('rooms')
-  createRoom(@Body() body: SaveRoomDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.roomsCreate, body)
+  createRoom(@Req() request: GatewayRequest, @Body() body: SaveRoomDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.roomsCreate,
+      this.gatewayClient.withActor(request.user, body)
+    )
   }
 
   @Patch('rooms/:id')
-  updateRoom(@Param('id') id: string, @Body() body: SaveRoomDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.roomsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateRoom(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveRoomDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.roomsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Get('beds')
-  listBeds() {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsList, undefined)
+  listBeds(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.bedsList,
+      this.gatewayClient.withActorOnly(request.user)
+    )
   }
 
   @Post('beds')
-  createBed(@Body() body: SaveBedDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsCreate, body)
+  createBed(@Req() request: GatewayRequest, @Body() body: SaveBedDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.bedsCreate,
+      this.gatewayClient.withActor(request.user, body)
+    )
   }
 
   @Patch('beds/:id')
-  updateBed(@Param('id') id: string, @Body() body: SaveBedDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateBed(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveBedDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.bedsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Delete('beds/:id')
-  deleteBed(@Param('id') id: string) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.bedsDelete, {
-      id: Number(id),
-    })
+  deleteBed(@Req() request: GatewayRequest, @Param('id') id: string) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.bedsDelete,
+      this.gatewayClient.withActorAndId(request.user, Number(id))
+    )
   }
 
   @Get('meal-plans')
-  listMealPlans() {
+  listMealPlans(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.mealPlansList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('meal-plans')
-  createMealPlan(@Body() body: SaveMealPlanDto) {
+  createMealPlan(@Req() request: GatewayRequest, @Body() body: SaveMealPlanDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.mealPlansCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('meal-plans/:id')
-  updateMealPlan(@Param('id') id: string, @Body() body: SaveMealPlanDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.mealPlansUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateMealPlan(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveMealPlanDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealPlansUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Delete('meal-plans/:id')
-  deleteMealPlan(@Param('id') id: string) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.mealPlansDelete, {
-      id: Number(id),
-    })
+  deleteMealPlan(@Req() request: GatewayRequest, @Param('id') id: string) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.mealPlansDelete,
+      this.gatewayClient.withActorAndId(request.user, Number(id))
+    )
   }
 
   @Get('meal-calendars')
-  listMealCalendars() {
+  listMealCalendars(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.mealCalendarsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('meal-calendars')
-  createMealCalendar(@Body() body: SaveMealCalendarDto) {
+  createMealCalendar(
+    @Req() request: GatewayRequest,
+    @Body() body: SaveMealCalendarDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.mealCalendarsCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('meal-calendars/:id')
-  updateMealCalendar(@Param('id') id: string, @Body() body: SaveMealCalendarDto) {
+  updateMealCalendar(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveMealCalendarDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.mealCalendarsUpdate,
-      {
-        id: Number(id),
-        data: body,
-      }
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
     )
   }
 
   @Delete('meal-calendars/:id')
-  deleteMealCalendar(@Param('id') id: string) {
+  deleteMealCalendar(@Req() request: GatewayRequest, @Param('id') id: string) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.mealBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.mealCalendarsDelete,
-      {
-        id: Number(id),
-      }
+      this.gatewayClient.withActorAndId(request.user, Number(id))
     )
   }
 
   @Get('check-ins')
-  listCheckIns() {
+  listCheckIns(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.checkInsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('check-ins')
-  createCheckIn(@Body() body: CreateCheckInDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.checkInsCreate, body)
+  createCheckIn(@Req() request: GatewayRequest, @Body() body: CreateCheckInDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkInsCreate,
+      this.gatewayClient.withActor(request.user, body)
+    )
   }
 
   @Get('check-outs')
-  listCheckOuts() {
+  listCheckOuts(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.checkOutsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('check-outs')
-  createCheckOut(@Body() body: CreateCheckOutDto) {
+  createCheckOut(@Req() request: GatewayRequest, @Body() body: CreateCheckOutDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.checkOutsCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Get('outings')
-  listOutings() {
+  listOutings(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.outingsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('outings')
-  createOuting(@Body() body: CreateOutingDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.outingsCreate, body)
+  createOuting(@Req() request: GatewayRequest, @Body() body: CreateOutingDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.outingsCreate,
+      this.gatewayClient.withActor(request.user, body)
+    )
   }
 
   @Patch('outings/:id/return')
-  returnOuting(@Param('id') id: string, @Body() body: ReturnOutingDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.outingsReturn, {
-      id: Number(id),
-      data: body,
-    })
+  returnOuting(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: ReturnOutingDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.outingsReturn,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Get('service-targets')
-  listServiceTargets() {
+  listServiceTargets(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.serviceTargetAdmin)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.serviceTargetsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('service-targets')
-  createServiceTarget(@Body() body: SaveServiceTargetDto) {
+  createServiceTarget(
+    @Req() request: GatewayRequest,
+    @Body() body: SaveServiceTargetDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.serviceTargetAdmin)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.serviceTargetsCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('service-targets/:id')
-  updateServiceTarget(@Param('id') id: string, @Body() body: SaveServiceTargetDto) {
+  updateServiceTarget(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveServiceTargetDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.serviceTargetAdmin)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.serviceTargetsUpdate,
-      {
-        id: Number(id),
-        data: body,
-      }
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
     )
   }
 
   @Get('service-focuses')
-  listServiceFocuses() {
+  listServiceFocuses(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.serviceFocusWrite,
+      ...gatewayRoleMatrix.serviceFocusReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.serviceFocusesList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('service-focuses')
-  createServiceFocus(@Body() body: SaveServiceFocusDto) {
+  createServiceFocus(
+    @Req() request: GatewayRequest,
+    @Body() body: SaveServiceFocusDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.serviceFocusWrite)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.serviceFocusesCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('service-focuses/:id')
-  updateServiceFocus(@Param('id') id: string, @Body() body: SaveServiceFocusDto) {
+  updateServiceFocus(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveServiceFocusDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.serviceFocusWrite)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.serviceFocusesUpdate,
-      {
-        id: Number(id),
-        data: body,
-      }
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
     )
   }
 }

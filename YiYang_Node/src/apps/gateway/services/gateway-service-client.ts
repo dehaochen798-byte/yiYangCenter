@@ -8,6 +8,13 @@ import type {
   ServiceInstance,
   ServiceName,
 } from '../../../libs/registry/registry.types.js'
+import type {
+  Actor,
+  ActorOnlyPayload,
+  ActorIdPayload,
+  ActorPayload,
+  ActorUpdatePayload,
+} from '../../../common/rbac/rbac.types.js'
 
 @Injectable()
 export class GatewayServiceClient implements OnModuleDestroy {
@@ -22,6 +29,38 @@ export class GatewayServiceClient implements OnModuleDestroy {
   ) {
     const client = await this.getClient(serviceName)
     return sendTcpMessage<TResponse, TPayload>(client, pattern, payload)
+  }
+
+  withActor<TPayload>(actor: Actor, data: TPayload): ActorPayload<TPayload> {
+    return {
+      actor,
+      data,
+    }
+  }
+
+  withActorOnly(actor: Actor): ActorOnlyPayload {
+    return {
+      actor,
+    }
+  }
+
+  withActorAndId(actor: Actor, id: number): ActorIdPayload {
+    return {
+      actor,
+      id,
+    }
+  }
+
+  withActorAndUpdate<TPayload>(
+    actor: Actor,
+    id: number,
+    data: TPayload
+  ): ActorUpdatePayload<TPayload> {
+    return {
+      actor,
+      id,
+      data,
+    }
   }
 
   async getClient(serviceName: ServiceName) {

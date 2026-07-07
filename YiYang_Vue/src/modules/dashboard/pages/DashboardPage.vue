@@ -219,16 +219,20 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { ISpec } from '@visactor/vchart'
+import { ROLE_KEYS } from '@/constants/rbac'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import {
   getDashboardSummary,
   type DashboardData,
 } from '@/modules/dashboard/api/dashboard.api'
 import VChartPanel from '@/modules/dashboard/components/VChartPanel.vue'
 import { formatDateTime } from '@/modules/shared/utils/format'
+import { canAccessRoles } from '@/utils/permission'
 
 type TagType = 'primary' | 'success' | 'warning' | 'info' | 'danger'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const loading = ref(false)
 const dashboardData = reactive<DashboardData>({
   summary: {
@@ -472,38 +476,46 @@ const roomOccupancySpec = computed<ISpec>(() => ({
   background: 'transparent',
 }))
 
-const quickActions = [
+const quickActions = computed(() =>
+  [
   {
     title: '办理入住',
     description: '客户分配床位并登记入住',
     path: '/customer/check-in',
+    roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK],
   },
   {
     title: '床位管理',
     description: '维护房间和床位配置',
     path: '/customer/bed',
+    roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK],
   },
   {
     title: '膳食方案',
     description: '为客户定制膳食安排',
     path: '/customer/meal',
+    roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MEAL_MANAGER],
   },
   {
     title: '护理记录',
     description: '录入护理项目执行情况',
     path: '/nursing/care-record',
+    roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR, ROLE_KEYS.NURSING_STAFF],
   },
   {
     title: '外出登记',
     description: '登记客户外出与归院',
     path: '/customer/outing',
+    roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK],
   },
   {
-    title: '服务关系',
-    description: '维护客户与健康管家绑定',
+    title: '服务对象分配',
+    description: '维护护理负责老人绑定关系',
     path: '/customer/service-target',
+    roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR],
   },
-]
+  ].filter((item) => canAccessRoles(authStore.profile, item.roles))
+)
 
 onMounted(async () => {
   loading.value = true

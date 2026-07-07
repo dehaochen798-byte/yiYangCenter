@@ -27,6 +27,12 @@ export type AuthProfile = {
   status?: 'ACTIVE' | 'DISABLED'
   roleName?: string | null
   departmentName?: string | null
+  roleKey?:
+    | 'ADMIN'
+    | 'NURSING_SUPERVISOR'
+    | 'NURSING_STAFF'
+    | 'FRONT_DESK'
+    | 'MEAL_MANAGER'
 }
 
 export type ValidateTokenPayload = {

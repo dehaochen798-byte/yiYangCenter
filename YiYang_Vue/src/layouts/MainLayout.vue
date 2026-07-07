@@ -17,7 +17,7 @@
           class="main-layout__menu"
           @select="handleMenuSelect"
         >
-          <template v-for="group in menuGroups" :key="group.index">
+          <template v-for="group in visibleMenuGroups" :key="group.index">
             <el-sub-menu v-if="group.items.length > 1" :index="group.index">
               <template #title>
                 <el-icon><component :is="group.icon" /></el-icon>
@@ -137,12 +137,15 @@ import type { TabsPaneContext } from 'element-plus'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ROLE_KEYS } from '@/constants/rbac'
+import { canAccessRoles } from '@/utils/permission'
 import { useAuthStore } from '../modules/auth/store/auth.store'
 import { useAppStore } from '../stores/app.store'
 
 type MenuItem = {
   index: string
   title: string
+  roles?: string[]
 }
 
 type MenuGroup = {
@@ -169,22 +172,23 @@ const menuGroups: MenuGroup[] = [
     index: 'dashboard',
     title: '工作台',
     icon: HomeFilled,
-    items: [{ index: '/dashboard', title: '系统首页' }],
+    items: [{ index: '/dashboard', title: '系统首页', roles: Object.values(ROLE_KEYS) }],
   },
   {
     index: 'customer',
     title: '客户管理',
     icon: House,
     items: [
-      { index: '/customer/bed', title: '床位管理' },
-      { index: '/customer/meal', title: '膳食管理' },
-      { index: '/customer/meal-calendar', title: '膳食日历' },
-      { index: '/customer/check-in', title: '入住登记' },
-      { index: '/customer/check-out', title: '退住登记' },
-      { index: '/customer/outing', title: '外出登记' },
-      { index: '/customer/service-target', title: '设置服务对象' },
-      { index: '/customer/service-focus', title: '服务关注' },
-      { index: '/customer/user', title: '用户管理' },
+      { index: '/customer/residents', title: '客户档案', roles: Object.values(ROLE_KEYS) },
+      { index: '/customer/users', title: '员工账号', roles: [ROLE_KEYS.ADMIN] },
+      { index: '/customer/bed', title: '床位管理', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK] },
+      { index: '/customer/check-in', title: '入住登记', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK] },
+      { index: '/customer/check-out', title: '退住登记', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK] },
+      { index: '/customer/outing', title: '外出登记', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK] },
+      { index: '/customer/meal', title: '膳食管理', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MEAL_MANAGER] },
+      { index: '/customer/meal-calendar', title: '膳食日历', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.MEAL_MANAGER] },
+      { index: '/customer/service-target', title: '服务对象分配', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR] },
+      { index: '/customer/service-focus', title: '服务关注', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_STAFF] },
     ],
   },
   {
@@ -192,12 +196,21 @@ const menuGroups: MenuGroup[] = [
     title: '护理模块',
     icon: Memo,
     items: [
-      { index: '/nursing/care-level', title: '护理级别' },
-      { index: '/nursing/care-item', title: '护理内容' },
-      { index: '/nursing/care-record', title: '护理记录' },
+      { index: '/nursing/care-level', title: '护理级别', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR, ROLE_KEYS.NURSING_STAFF] },
+      { index: '/nursing/care-item', title: '护理内容', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR, ROLE_KEYS.NURSING_STAFF] },
+      { index: '/nursing/care-record', title: '护理记录', roles: [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR, ROLE_KEYS.NURSING_STAFF] },
     ],
   },
 ]
+
+const visibleMenuGroups = computed(() =>
+  menuGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccessRoles(authStore.profile, item.roles)),
+    }))
+    .filter((group) => group.items.length > 0)
+)
 
 const menuItemMap = new Map(
   menuGroups.flatMap((group) => group.items.map((item) => [item.index, item.title]))

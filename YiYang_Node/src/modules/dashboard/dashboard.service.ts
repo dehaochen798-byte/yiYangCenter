@@ -6,6 +6,7 @@ import {
   ServiceFocusStatus,
 } from '../../../generated/prisma/enums.js'
 import { PrismaService } from '../../prisma/prisma.service.js'
+import type { Actor } from '../../common/rbac/rbac.types.js'
 
 function startOfToday() {
   const now = new Date()
@@ -17,7 +18,8 @@ function startOfToday() {
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSummary() {
+  async getSummary(actor: Actor) {
+    void actor
     const today = startOfToday()
 
     const [

@@ -8,7 +8,7 @@
   >
     <template #table-actions>
       <div class="table-toolbar">
-        <el-button type="primary" @click="openCreateDialog">新建护理内容</el-button>
+        <el-button v-if="canEdit" type="primary" @click="openCreateDialog">新建护理内容</el-button>
       </div>
     </template>
 
@@ -39,7 +39,7 @@
             {{ row._count?.records || 0 }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column v-if="canEdit" label="操作" width="100" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
           </template>
@@ -106,6 +106,8 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
+import { ROLE_KEYS } from '@/constants/rbac'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import {
   createCareItem,
   getCareItems,
@@ -133,6 +135,12 @@ const careLevels = ref<CareLevelItem[]>([])
 const dialogVisible = ref(false)
 const form = reactive<CareItemForm>(createForm())
 const dialogTitle = computed(() => (form.id ? '编辑护理内容' : '新建护理内容'))
+const authStore = useAuthStore()
+const canEdit = computed(
+  () =>
+    authStore.profile?.roleKey === ROLE_KEYS.ADMIN ||
+    authStore.profile?.roleKey === ROLE_KEYS.NURSING_SUPERVISOR
+)
 
 onMounted(loadData)
 

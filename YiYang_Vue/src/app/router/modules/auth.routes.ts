@@ -45,4 +45,13 @@ export const authRoutes: RouteRecordRaw[] = [
       },
     ],
   },
+  {
+    path: '/403',
+    name: 'forbidden',
+    component: () => import('@/modules/system/pages/ForbiddenPage.vue'),
+    meta: {
+      requiresAuth: true,
+      title: '无权访问',
+    },
+  },
 ]

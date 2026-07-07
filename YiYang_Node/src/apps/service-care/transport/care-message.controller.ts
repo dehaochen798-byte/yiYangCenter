@@ -24,6 +24,12 @@ import type {
   SaveCareLevelDto,
   SaveCareRecordDto,
 } from '../../../modules/nursing/dto/nursing.dto.js'
+import type {
+  ActorOnlyPayload,
+  ActorIdPayload,
+  ActorPayload,
+  ActorUpdatePayload,
+} from '../../../common/rbac/rbac.types.js'
 
 @Controller()
 export class CareMessageController {
@@ -34,252 +40,252 @@ export class CareMessageController {
   ) {}
 
   @MessagePattern(CARE_PATTERNS.dashboardSummary)
-  getDashboardSummary() {
-    return this.dashboardService.getSummary()
+  getDashboardSummary(payload: ActorOnlyPayload) {
+    return this.dashboardService.getSummary(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.customerModules)
-  getCustomerModules() {
-    return this.customerService.getModules()
+  getCustomerModules(payload: ActorOnlyPayload) {
+    return this.customerService.getModules(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.customerOverview)
-  getCustomerOverview() {
-    return this.customerService.getOverview()
+  getCustomerOverview(payload: ActorOnlyPayload) {
+    return this.customerService.getOverview(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.residentsList)
-  listResidents() {
-    return this.customerService.listResidents()
+  listResidents(payload: ActorOnlyPayload) {
+    return this.customerService.listResidents(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.residentsCreate)
-  createResident(payload: SaveResidentDto) {
-    return this.customerService.createResident(payload)
+  createResident(payload: ActorPayload<SaveResidentDto>) {
+    return this.customerService.createResident(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.residentsUpdate)
-  updateResident(payload: { id: number; data: SaveResidentDto }) {
-    return this.customerService.updateResident(payload.id, payload.data)
+  updateResident(payload: ActorUpdatePayload<SaveResidentDto>) {
+    return this.customerService.updateResident(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.usersList)
-  listUsers() {
-    return this.customerService.listUsers()
+  listUsers(payload: ActorOnlyPayload) {
+    return this.customerService.listUsers(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.usersCreate)
-  createUser(payload: SaveUserDto) {
-    return this.customerService.createUser(payload)
+  createUser(payload: ActorPayload<SaveUserDto>) {
+    return this.customerService.createUser(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.usersUpdate)
-  updateUser(payload: { id: number; data: SaveUserDto }) {
-    return this.customerService.updateUser(payload.id, payload.data)
+  updateUser(payload: ActorUpdatePayload<SaveUserDto>) {
+    return this.customerService.updateUser(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.usersResetPassword)
-  resetUserPassword(payload: { id: number }) {
-    return this.customerService.resetUserPassword(payload.id)
+  resetUserPassword(payload: ActorIdPayload) {
+    return this.customerService.resetUserPassword(payload.actor, payload.id)
   }
 
   @MessagePattern(CARE_PATTERNS.roomsList)
-  listRooms() {
-    return this.customerService.listRooms()
+  listRooms(payload: ActorOnlyPayload) {
+    return this.customerService.listRooms(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.roomsCreate)
-  createRoom(payload: SaveRoomDto) {
-    return this.customerService.createRoom(payload)
+  createRoom(payload: ActorPayload<SaveRoomDto>) {
+    return this.customerService.createRoom(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.roomsUpdate)
-  updateRoom(payload: { id: number; data: SaveRoomDto }) {
-    return this.customerService.updateRoom(payload.id, payload.data)
+  updateRoom(payload: ActorUpdatePayload<SaveRoomDto>) {
+    return this.customerService.updateRoom(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.bedsList)
-  listBeds() {
-    return this.customerService.listBeds()
+  listBeds(payload: ActorOnlyPayload) {
+    return this.customerService.listBeds(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.bedsCreate)
-  createBed(payload: SaveBedDto) {
-    return this.customerService.createBed(payload)
+  createBed(payload: ActorPayload<SaveBedDto>) {
+    return this.customerService.createBed(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.bedsUpdate)
-  updateBed(payload: { id: number; data: SaveBedDto }) {
-    return this.customerService.updateBed(payload.id, payload.data)
+  updateBed(payload: ActorUpdatePayload<SaveBedDto>) {
+    return this.customerService.updateBed(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.bedsDelete)
-  deleteBed(payload: { id: number }) {
-    return this.customerService.deleteBed(payload.id)
+  deleteBed(payload: ActorIdPayload) {
+    return this.customerService.deleteBed(payload.actor, payload.id)
   }
 
   @MessagePattern(CARE_PATTERNS.mealPlansList)
-  listMealPlans() {
-    return this.customerService.listMealPlans()
+  listMealPlans(payload: ActorOnlyPayload) {
+    return this.customerService.listMealPlans(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.mealPlansCreate)
-  createMealPlan(payload: SaveMealPlanDto) {
-    return this.customerService.createMealPlan(payload)
+  createMealPlan(payload: ActorPayload<SaveMealPlanDto>) {
+    return this.customerService.createMealPlan(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.mealPlansUpdate)
-  updateMealPlan(payload: { id: number; data: SaveMealPlanDto }) {
-    return this.customerService.updateMealPlan(payload.id, payload.data)
+  updateMealPlan(payload: ActorUpdatePayload<SaveMealPlanDto>) {
+    return this.customerService.updateMealPlan(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.mealPlansDelete)
-  deleteMealPlan(payload: { id: number }) {
-    return this.customerService.deleteMealPlan(payload.id)
+  deleteMealPlan(payload: ActorIdPayload) {
+    return this.customerService.deleteMealPlan(payload.actor, payload.id)
   }
 
   @MessagePattern(CARE_PATTERNS.mealCalendarsList)
-  listMealCalendars() {
-    return this.customerService.listMealCalendars()
+  listMealCalendars(payload: ActorOnlyPayload) {
+    return this.customerService.listMealCalendars(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.mealCalendarsCreate)
-  createMealCalendar(payload: SaveMealCalendarDto) {
-    return this.customerService.createMealCalendar(payload)
+  createMealCalendar(payload: ActorPayload<SaveMealCalendarDto>) {
+    return this.customerService.createMealCalendar(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.mealCalendarsUpdate)
-  updateMealCalendar(payload: { id: number; data: SaveMealCalendarDto }) {
-    return this.customerService.updateMealCalendar(payload.id, payload.data)
+  updateMealCalendar(payload: ActorUpdatePayload<SaveMealCalendarDto>) {
+    return this.customerService.updateMealCalendar(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.mealCalendarsDelete)
-  deleteMealCalendar(payload: { id: number }) {
-    return this.customerService.deleteMealCalendar(payload.id)
+  deleteMealCalendar(payload: ActorIdPayload) {
+    return this.customerService.deleteMealCalendar(payload.actor, payload.id)
   }
 
   @MessagePattern(CARE_PATTERNS.checkInsList)
-  listCheckIns() {
-    return this.customerService.listCheckIns()
+  listCheckIns(payload: ActorOnlyPayload) {
+    return this.customerService.listCheckIns(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.checkInsCreate)
-  createCheckIn(payload: CreateCheckInDto) {
-    return this.customerService.createCheckIn(payload)
+  createCheckIn(payload: ActorPayload<CreateCheckInDto>) {
+    return this.customerService.createCheckIn(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.checkOutsList)
-  listCheckOuts() {
-    return this.customerService.listCheckOuts()
+  listCheckOuts(payload: ActorOnlyPayload) {
+    return this.customerService.listCheckOuts(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.checkOutsCreate)
-  createCheckOut(payload: CreateCheckOutDto) {
-    return this.customerService.createCheckOut(payload)
+  createCheckOut(payload: ActorPayload<CreateCheckOutDto>) {
+    return this.customerService.createCheckOut(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.outingsList)
-  listOutings() {
-    return this.customerService.listOutings()
+  listOutings(payload: ActorOnlyPayload) {
+    return this.customerService.listOutings(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.outingsCreate)
-  createOuting(payload: CreateOutingDto) {
-    return this.customerService.createOuting(payload)
+  createOuting(payload: ActorPayload<CreateOutingDto>) {
+    return this.customerService.createOuting(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.outingsReturn)
-  returnOuting(payload: { id: number; data: ReturnOutingDto }) {
-    return this.customerService.returnOuting(payload.id, payload.data)
+  returnOuting(payload: ActorUpdatePayload<ReturnOutingDto>) {
+    return this.customerService.returnOuting(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.serviceTargetsList)
-  listServiceTargets() {
-    return this.customerService.listServiceTargets()
+  listServiceTargets(payload: ActorOnlyPayload) {
+    return this.customerService.listServiceTargets(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.serviceTargetsCreate)
-  createServiceTarget(payload: SaveServiceTargetDto) {
-    return this.customerService.createServiceTarget(payload)
+  createServiceTarget(payload: ActorPayload<SaveServiceTargetDto>) {
+    return this.customerService.createServiceTarget(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.serviceTargetsUpdate)
-  updateServiceTarget(payload: { id: number; data: SaveServiceTargetDto }) {
-    return this.customerService.updateServiceTarget(payload.id, payload.data)
+  updateServiceTarget(payload: ActorUpdatePayload<SaveServiceTargetDto>) {
+    return this.customerService.updateServiceTarget(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.serviceFocusesList)
-  listServiceFocuses() {
-    return this.customerService.listServiceFocuses()
+  listServiceFocuses(payload: ActorOnlyPayload) {
+    return this.customerService.listServiceFocuses(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.serviceFocusesCreate)
-  createServiceFocus(payload: SaveServiceFocusDto) {
-    return this.customerService.createServiceFocus(payload)
+  createServiceFocus(payload: ActorPayload<SaveServiceFocusDto>) {
+    return this.customerService.createServiceFocus(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.serviceFocusesUpdate)
-  updateServiceFocus(payload: { id: number; data: SaveServiceFocusDto }) {
-    return this.customerService.updateServiceFocus(payload.id, payload.data)
+  updateServiceFocus(payload: ActorUpdatePayload<SaveServiceFocusDto>) {
+    return this.customerService.updateServiceFocus(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.nursingModules)
-  getNursingModules() {
-    return this.nursingService.getModules()
+  getNursingModules(payload: ActorOnlyPayload) {
+    return this.nursingService.getModules(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.careLevelsList)
-  listCareLevels() {
-    return this.nursingService.listCareLevels()
+  listCareLevels(payload: ActorOnlyPayload) {
+    return this.nursingService.listCareLevels(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.careLevelsCreate)
-  createCareLevel(payload: SaveCareLevelDto) {
-    return this.nursingService.createCareLevel(payload)
+  createCareLevel(payload: ActorPayload<SaveCareLevelDto>) {
+    return this.nursingService.createCareLevel(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.careLevelsUpdate)
-  updateCareLevel(payload: { id: number; data: SaveCareLevelDto }) {
-    return this.nursingService.updateCareLevel(payload.id, payload.data)
+  updateCareLevel(payload: ActorUpdatePayload<SaveCareLevelDto>) {
+    return this.nursingService.updateCareLevel(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.careItemsList)
-  listCareItems() {
-    return this.nursingService.listCareItems()
+  listCareItems(payload: ActorOnlyPayload) {
+    return this.nursingService.listCareItems(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.careItemsCreate)
-  createCareItem(payload: SaveCareItemDto) {
-    return this.nursingService.createCareItem(payload)
+  createCareItem(payload: ActorPayload<SaveCareItemDto>) {
+    return this.nursingService.createCareItem(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.careItemsUpdate)
-  updateCareItem(payload: { id: number; data: SaveCareItemDto }) {
-    return this.nursingService.updateCareItem(payload.id, payload.data)
+  updateCareItem(payload: ActorUpdatePayload<SaveCareItemDto>) {
+    return this.nursingService.updateCareItem(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.careRecordsList)
-  listCareRecords() {
-    return this.nursingService.listCareRecords()
+  listCareRecords(payload: ActorOnlyPayload) {
+    return this.nursingService.listCareRecords(payload.actor)
   }
 
   @MessagePattern(CARE_PATTERNS.careRecordsCreate)
-  createCareRecord(payload: SaveCareRecordDto) {
-    return this.nursingService.createCareRecord(payload)
+  createCareRecord(payload: ActorPayload<SaveCareRecordDto>) {
+    return this.nursingService.createCareRecord(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.careRecordsGenerateAiNote)
-  generateCareRecordAiNote(payload: GenerateCareRecordNoteDto) {
-    return this.nursingService.generateCareRecordAiNote(payload)
+  generateCareRecordAiNote(payload: ActorPayload<GenerateCareRecordNoteDto>) {
+    return this.nursingService.generateCareRecordAiNote(payload.actor, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.careRecordsUpdate)
-  updateCareRecord(payload: { id: number; data: SaveCareRecordDto }) {
-    return this.nursingService.updateCareRecord(payload.id, payload.data)
+  updateCareRecord(payload: ActorUpdatePayload<SaveCareRecordDto>) {
+    return this.nursingService.updateCareRecord(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.careRecordsDelete)
-  deleteCareRecord(payload: { id: number }) {
-    return this.nursingService.deleteCareRecord(payload.id)
+  deleteCareRecord(payload: ActorIdPayload) {
+    return this.nursingService.deleteCareRecord(payload.actor, payload.id)
   }
 }

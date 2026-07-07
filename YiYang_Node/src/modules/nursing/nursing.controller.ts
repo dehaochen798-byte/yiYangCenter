@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common'
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js'
 import {
   GenerateCareRecordNoteDto,
@@ -7,6 +7,9 @@ import {
   SaveCareRecordDto,
 } from './dto/nursing.dto.js'
 import { NursingService } from './nursing.service.js'
+import type { Actor } from '../../common/rbac/rbac.types.js'
+
+type AuthRequest = { user: Actor }
 
 @Controller('nursing')
 @UseGuards(JwtAuthGuard)
@@ -14,62 +17,77 @@ export class NursingController {
   constructor(private readonly nursingService: NursingService) {}
 
   @Get('modules')
-  getModules() {
-    return this.nursingService.getModules()
+  getModules(@Req() request: AuthRequest) {
+    return this.nursingService.getModules(request.user)
   }
 
   @Get('care-levels')
-  listCareLevels() {
-    return this.nursingService.listCareLevels()
+  listCareLevels(@Req() request: AuthRequest) {
+    return this.nursingService.listCareLevels(request.user)
   }
 
   @Post('care-levels')
-  createCareLevel(@Body() body: SaveCareLevelDto) {
-    return this.nursingService.createCareLevel(body)
+  createCareLevel(@Req() request: AuthRequest, @Body() body: SaveCareLevelDto) {
+    return this.nursingService.createCareLevel(request.user, body)
   }
 
   @Patch('care-levels/:id')
-  updateCareLevel(@Param('id') id: string, @Body() body: SaveCareLevelDto) {
-    return this.nursingService.updateCareLevel(Number(id), body)
+  updateCareLevel(
+    @Req() request: AuthRequest,
+    @Param('id') id: string,
+    @Body() body: SaveCareLevelDto
+  ) {
+    return this.nursingService.updateCareLevel(request.user, Number(id), body)
   }
 
   @Get('care-items')
-  listCareItems() {
-    return this.nursingService.listCareItems()
+  listCareItems(@Req() request: AuthRequest) {
+    return this.nursingService.listCareItems(request.user)
   }
 
   @Post('care-items')
-  createCareItem(@Body() body: SaveCareItemDto) {
-    return this.nursingService.createCareItem(body)
+  createCareItem(@Req() request: AuthRequest, @Body() body: SaveCareItemDto) {
+    return this.nursingService.createCareItem(request.user, body)
   }
 
   @Patch('care-items/:id')
-  updateCareItem(@Param('id') id: string, @Body() body: SaveCareItemDto) {
-    return this.nursingService.updateCareItem(Number(id), body)
+  updateCareItem(
+    @Req() request: AuthRequest,
+    @Param('id') id: string,
+    @Body() body: SaveCareItemDto
+  ) {
+    return this.nursingService.updateCareItem(request.user, Number(id), body)
   }
 
   @Get('care-records')
-  listCareRecords() {
-    return this.nursingService.listCareRecords()
+  listCareRecords(@Req() request: AuthRequest) {
+    return this.nursingService.listCareRecords(request.user)
   }
 
   @Post('care-records')
-  createCareRecord(@Body() body: SaveCareRecordDto) {
-    return this.nursingService.createCareRecord(body)
+  createCareRecord(@Req() request: AuthRequest, @Body() body: SaveCareRecordDto) {
+    return this.nursingService.createCareRecord(request.user, body)
   }
 
   @Post('care-records/ai-note')
-  generateCareRecordAiNote(@Body() body: GenerateCareRecordNoteDto) {
-    return this.nursingService.generateCareRecordAiNote(body)
+  generateCareRecordAiNote(
+    @Req() request: AuthRequest,
+    @Body() body: GenerateCareRecordNoteDto
+  ) {
+    return this.nursingService.generateCareRecordAiNote(request.user, body)
   }
 
   @Patch('care-records/:id')
-  updateCareRecord(@Param('id') id: string, @Body() body: SaveCareRecordDto) {
-    return this.nursingService.updateCareRecord(Number(id), body)
+  updateCareRecord(
+    @Req() request: AuthRequest,
+    @Param('id') id: string,
+    @Body() body: SaveCareRecordDto
+  ) {
+    return this.nursingService.updateCareRecord(request.user, Number(id), body)
   }
 
   @Delete('care-records/:id')
-  deleteCareRecord(@Param('id') id: string) {
-    return this.nursingService.deleteCareRecord(Number(id))
+  deleteCareRecord(@Req() request: AuthRequest, @Param('id') id: string) {
+    return this.nursingService.deleteCareRecord(request.user, Number(id))
   }
 }

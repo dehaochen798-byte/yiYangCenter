@@ -3,6 +3,7 @@ import type { CanActivate, ExecutionContext } from '@nestjs/common'
 import { AUTH_PATTERNS } from '../../../libs/contracts/auth.contract.js'
 import { SERVICE_NAMES } from '../../../libs/registry/registry.types.js'
 import { GatewayServiceClient } from '../services/gateway-service-client.js'
+import type { Actor } from '../../../common/rbac/rbac.types.js'
 
 @Injectable()
 export class GatewayJwtGuard implements CanActivate {
@@ -11,7 +12,7 @@ export class GatewayJwtGuard implements CanActivate {
   async canActivate(context: ExecutionContext) {
     const request = context
       .switchToHttp()
-      .getRequest<{ headers: Record<string, string>; user?: unknown }>()
+      .getRequest<{ headers: Record<string, string>; user?: Actor }>()
     const authorization = request.headers.authorization
 
     if (!authorization) {
@@ -27,7 +28,7 @@ export class GatewayJwtGuard implements CanActivate {
       throw new UnauthorizedException('登录状态无效')
     }
 
-    request.user = result.data
+    request.user = result.data as Actor
     return true
   }
 }

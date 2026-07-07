@@ -153,6 +153,60 @@ async function main() {
       },
     })
 
+    await prisma.user.upsert({
+      where: {
+        mobile: '19100001914',
+      },
+      update: {
+        realName: '孙悦',
+        nickName: '孙悦',
+        age: 29,
+        gender: Gender.FEMALE,
+        status: UserStatus.ACTIVE,
+        roleName: '前台人员',
+        departmentName: '接待部',
+        passwordHash: defaultPasswordHash,
+      },
+      create: {
+        mobile: '19100001914',
+        passwordHash: defaultPasswordHash,
+        realName: '孙悦',
+        nickName: '孙悦',
+        age: 29,
+        gender: Gender.FEMALE,
+        status: UserStatus.ACTIVE,
+        roleName: '前台人员',
+        departmentName: '接待部',
+      },
+    })
+
+    await prisma.user.upsert({
+      where: {
+        mobile: '19100001915',
+      },
+      update: {
+        realName: '梁秋月',
+        nickName: '梁秋月',
+        age: 31,
+        gender: Gender.FEMALE,
+        status: UserStatus.ACTIVE,
+        roleName: '膳食管理员',
+        departmentName: '膳食部',
+        passwordHash: defaultPasswordHash,
+      },
+      create: {
+        mobile: '19100001915',
+        passwordHash: defaultPasswordHash,
+        realName: '梁秋月',
+        nickName: '梁秋月',
+        age: 31,
+        gender: Gender.FEMALE,
+        status: UserStatus.ACTIVE,
+        roleName: '膳食管理员',
+        departmentName: '膳食部',
+      },
+    })
+
     async function ensureCareLevel(input: {
       code: string
       name: string

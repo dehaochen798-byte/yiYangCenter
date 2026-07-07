@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { PrismaService } from '../../prisma/prisma.service.js'
+import { toActor } from '../../common/rbac/rbac.util.js'
 
 type JwtPayload = {
   sub: number
@@ -46,6 +47,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('登录状态无效或账号已停用')
     }
 
-    return user
+    return toActor(user)
   }
 }

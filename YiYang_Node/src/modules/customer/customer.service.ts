@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -22,6 +23,14 @@ import {
   type DomainEvent,
   type MessageBrokerService,
 } from '../../libs/message-broker/index.js'
+import type { Actor } from '../../common/rbac/rbac.types.js'
+import {
+  assertRole,
+  hasRole,
+  isAdmin,
+  isNursingStaff,
+} from '../../common/rbac/rbac.util.js'
+import { ROLE_KEYS } from '../../common/rbac/rbac.types.js'
 import type {
   CreateCheckInDto,
   CreateCheckOutDto,
@@ -46,6 +55,16 @@ function normalizeText(value?: string | null) {
 }
 
 const DEFAULT_INITIAL_PASSWORD = '123456'
+const assignedResidentReadRoles = [ROLE_KEYS.NURSING_STAFF]
+const residentReadAllRoles = [
+  ROLE_KEYS.ADMIN,
+  ROLE_KEYS.NURSING_SUPERVISOR,
+  ROLE_KEYS.FRONT_DESK,
+  ROLE_KEYS.MEAL_MANAGER,
+]
+const serviceTargetAdminRoles = [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR]
+const roomBedRoles = [ROLE_KEYS.ADMIN, ROLE_KEYS.FRONT_DESK]
+const mealRoles = [ROLE_KEYS.ADMIN, ROLE_KEYS.MEAL_MANAGER]
 
 @Injectable()
 export class CustomerService {
@@ -54,7 +73,8 @@ export class CustomerService {
     @Inject(MESSAGE_BROKER) private readonly messageBroker: MessageBrokerService
   ) {}
 
-  getModules() {
+  getModules(actor: Actor) {
+    void actor
     return {
       code: 200,
       message: '客户管理模块可用',
@@ -72,7 +92,8 @@ export class CustomerService {
     }
   }
 
-  async getOverview() {
+  async getOverview(actor: Actor) {
+    void actor
     const [residentCount, activeResidentCount, occupiedBedCount, vacantBedCount] =
       await Promise.all([
         this.prisma.resident.count(),
@@ -107,8 +128,19 @@ export class CustomerService {
     }
   }
 
-  async listResidents() {
+  async listResidents(actor: Actor) {
+    this.assertResidentRead(actor)
+    const assignedResidentIds = isNursingStaff(actor)
+      ? await this.getAssignedResidentIds(actor.id)
+      : null
     const residents = await this.prisma.resident.findMany({
+      where: assignedResidentIds
+        ? {
+            id: {
+              in: assignedResidentIds,
+            },
+          }
+        : undefined,
       orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
       include: {
         currentBed: {
@@ -127,7 +159,8 @@ export class CustomerService {
     }
   }
 
-  async createResident(payload: SaveResidentDto) {
+  async createResident(actor: Actor, payload: SaveResidentDto) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可维护客户档案')
     await this.ensurePhoneAvailable(payload.phone)
     await this.ensureCareLevelExists(payload.careLevelId)
 
@@ -160,7 +193,8 @@ export class CustomerService {
     }
   }
 
-  async updateResident(id: number, payload: SaveResidentDto) {
+  async updateResident(actor: Actor, id: number, payload: SaveResidentDto) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可维护客户档案')
     await this.ensureResidentExists(id)
     await this.ensurePhoneAvailable(payload.phone, id)
     await this.ensureCareLevelExists(payload.careLevelId)
@@ -195,7 +229,8 @@ export class CustomerService {
     }
   }
 
-  async listUsers() {
+  async listUsers(actor: Actor) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可查看员工账号')
     const users = await this.prisma.user.findMany({
       orderBy: {
         updatedAt: 'desc',
@@ -222,7 +257,8 @@ export class CustomerService {
     }
   }
 
-  async createUser(payload: SaveUserDto) {
+  async createUser(actor: Actor, payload: SaveUserDto) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可维护员工账号')
     const exists = await this.prisma.user.findUnique({
       where: { mobile: payload.mobile.trim() },
     })
@@ -265,7 +301,8 @@ export class CustomerService {
     }
   }
 
-  async updateUser(id: number, payload: SaveUserDto) {
+  async updateUser(actor: Actor, id: number, payload: SaveUserDto) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可维护员工账号')
     const exists = await this.prisma.user.findUnique({ where: { id } })
 
     if (!exists) {
@@ -319,7 +356,8 @@ export class CustomerService {
     }
   }
 
-  async resetUserPassword(id: number) {
+  async resetUserPassword(actor: Actor, id: number) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可重置员工密码')
     const exists = await this.prisma.user.findUnique({ where: { id } })
 
     if (!exists) {
@@ -353,7 +391,8 @@ export class CustomerService {
     }
   }
 
-  async listRooms() {
+  async listRooms(actor: Actor) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可查看房间信息')
     const rooms = await this.prisma.room.findMany({
       orderBy: [{ building: 'asc' }, { floor: 'asc' }, { roomNo: 'asc' }],
       include: {
@@ -376,7 +415,8 @@ export class CustomerService {
     }
   }
 
-  async createRoom(payload: SaveRoomDto) {
+  async createRoom(actor: Actor, payload: SaveRoomDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可维护房间信息')
     const room = await this.prisma.room.create({
       data: {
         building: normalizeText(payload.building),
@@ -396,7 +436,8 @@ export class CustomerService {
     }
   }
 
-  async updateRoom(id: number, payload: SaveRoomDto) {
+  async updateRoom(actor: Actor, id: number, payload: SaveRoomDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可维护房间信息')
     const room = await this.prisma.room.update({
       where: { id },
       data: {
@@ -416,7 +457,8 @@ export class CustomerService {
     }
   }
 
-  async listBeds() {
+  async listBeds(actor: Actor) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可查看床位信息')
     const beds = await this.prisma.bed.findMany({
       orderBy: [{ room: { roomNo: 'asc' } }, { bedNo: 'asc' }],
       include: {
@@ -433,7 +475,8 @@ export class CustomerService {
     }
   }
 
-  async createBed(payload: SaveBedDto) {
+  async createBed(actor: Actor, payload: SaveBedDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可维护床位信息')
     const bedNo = payload.bedNo.trim()
 
     if (!bedNo) {
@@ -465,7 +508,8 @@ export class CustomerService {
     }
   }
 
-  async updateBed(id: number, payload: SaveBedDto) {
+  async updateBed(actor: Actor, id: number, payload: SaveBedDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可维护床位信息')
     const bedNo = payload.bedNo.trim()
 
     if (!bedNo) {
@@ -516,7 +560,8 @@ export class CustomerService {
     }
   }
 
-  async deleteBed(id: number) {
+  async deleteBed(actor: Actor, id: number) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可维护床位信息')
     const current = await this.prisma.bed.findUnique({
       where: { id },
       include: { currentResident: true },
@@ -558,7 +603,8 @@ export class CustomerService {
     }
   }
 
-  async listMealPlans() {
+  async listMealPlans(actor: Actor) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可查看膳食方案')
     const plans = await this.prisma.mealPlan.findMany({
       orderBy: {
         updatedAt: 'desc',
@@ -583,7 +629,8 @@ export class CustomerService {
     }
   }
 
-  async createMealPlan(payload: SaveMealPlanDto) {
+  async createMealPlan(actor: Actor, payload: SaveMealPlanDto) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可维护膳食方案')
     await this.ensureResidentExists(payload.residentId)
 
     const plan = await this.prisma.mealPlan.create({
@@ -609,7 +656,8 @@ export class CustomerService {
     }
   }
 
-  async updateMealPlan(id: number, payload: SaveMealPlanDto) {
+  async updateMealPlan(actor: Actor, id: number, payload: SaveMealPlanDto) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可维护膳食方案')
     await this.ensureResidentExists(payload.residentId)
 
     const plan = await this.prisma.mealPlan.update({
@@ -636,7 +684,8 @@ export class CustomerService {
     }
   }
 
-  async deleteMealPlan(id: number) {
+  async deleteMealPlan(actor: Actor, id: number) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可维护膳食方案')
     const plan = await this.prisma.mealPlan.findUnique({
       where: { id },
     })
@@ -655,7 +704,8 @@ export class CustomerService {
     }
   }
 
-  async listMealCalendars() {
+  async listMealCalendars(actor: Actor) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可查看膳食日历')
     const calendars = await this.prisma.mealCalendar.findMany({
       orderBy: {
         weekStartDate: 'desc',
@@ -669,7 +719,8 @@ export class CustomerService {
     }
   }
 
-  async createMealCalendar(payload: SaveMealCalendarDto) {
+  async createMealCalendar(actor: Actor, payload: SaveMealCalendarDto) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可维护膳食日历')
     const calendar = await this.prisma.mealCalendar.create({
       data: {
         campus: normalizeText(payload.campus),
@@ -692,7 +743,8 @@ export class CustomerService {
     }
   }
 
-  async updateMealCalendar(id: number, payload: SaveMealCalendarDto) {
+  async updateMealCalendar(actor: Actor, id: number, payload: SaveMealCalendarDto) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可维护膳食日历')
     const calendar = await this.prisma.mealCalendar.update({
       where: { id },
       data: {
@@ -716,7 +768,8 @@ export class CustomerService {
     }
   }
 
-  async deleteMealCalendar(id: number) {
+  async deleteMealCalendar(actor: Actor, id: number) {
+    assertRole(actor, mealRoles, '仅管理员和膳食管理员可维护膳食日历')
     const calendar = await this.prisma.mealCalendar.findUnique({
       where: { id },
     })
@@ -735,7 +788,8 @@ export class CustomerService {
     }
   }
 
-  async listCheckIns() {
+  async listCheckIns(actor: Actor) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可查看入住登记')
     const records = await this.prisma.checkIn.findMany({
       orderBy: {
         checkInAt: 'desc',
@@ -765,7 +819,8 @@ export class CustomerService {
     }
   }
 
-  async createCheckIn(payload: CreateCheckInDto) {
+  async createCheckIn(actor: Actor, payload: CreateCheckInDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可办理入住')
     const resident = await this.ensureResidentExists(payload.residentId)
     const bed = await this.ensureBedExists(payload.bedId)
 
@@ -820,7 +875,8 @@ export class CustomerService {
     }
   }
 
-  async listCheckOuts() {
+  async listCheckOuts(actor: Actor) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可查看退住登记')
     const records = await this.prisma.checkOut.findMany({
       orderBy: {
         checkOutAt: 'desc',
@@ -842,7 +898,8 @@ export class CustomerService {
     }
   }
 
-  async createCheckOut(payload: CreateCheckOutDto) {
+  async createCheckOut(actor: Actor, payload: CreateCheckOutDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可办理退住')
     const resident = await this.ensureResidentExists(payload.residentId)
 
     if (!resident.currentBedId) {
@@ -893,7 +950,8 @@ export class CustomerService {
     }
   }
 
-  async listOutings() {
+  async listOutings(actor: Actor) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可查看外出登记')
     const outings = await this.prisma.outing.findMany({
       orderBy: {
         startAt: 'desc',
@@ -910,7 +968,8 @@ export class CustomerService {
     }
   }
 
-  async createOuting(payload: CreateOutingDto) {
+  async createOuting(actor: Actor, payload: CreateOutingDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可办理外出登记')
     const resident = await this.ensureResidentExists(payload.residentId)
 
     if (resident.status !== ResidenceStatus.ACTIVE) {
@@ -961,7 +1020,8 @@ export class CustomerService {
     }
   }
 
-  async returnOuting(id: number, payload: ReturnOutingDto) {
+  async returnOuting(actor: Actor, id: number, payload: ReturnOutingDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可办理归院登记')
     const outing = await this.prisma.outing.findUnique({
       where: { id },
     })
@@ -996,7 +1056,8 @@ export class CustomerService {
     }
   }
 
-  async listServiceTargets() {
+  async listServiceTargets(actor: Actor) {
+    assertRole(actor, serviceTargetAdminRoles, '仅管理员和护理主管可查看服务对象关系')
     const items = await this.prisma.serviceTarget.findMany({
       orderBy: {
         updatedAt: 'desc',
@@ -1021,7 +1082,8 @@ export class CustomerService {
     }
   }
 
-  async createServiceTarget(payload: SaveServiceTargetDto) {
+  async createServiceTarget(actor: Actor, payload: SaveServiceTargetDto) {
+    assertRole(actor, serviceTargetAdminRoles, '仅管理员和护理主管可维护服务对象关系')
     await this.ensureResidentExists(payload.residentId)
     await this.ensureManagerExists(payload.managerUserId)
 
@@ -1055,7 +1117,8 @@ export class CustomerService {
     }
   }
 
-  async updateServiceTarget(id: number, payload: SaveServiceTargetDto) {
+  async updateServiceTarget(actor: Actor, id: number, payload: SaveServiceTargetDto) {
+    assertRole(actor, serviceTargetAdminRoles, '仅管理员和护理主管可维护服务对象关系')
     await this.ensureResidentExists(payload.residentId)
     await this.ensureManagerExists(payload.managerUserId)
 
@@ -1090,8 +1153,22 @@ export class CustomerService {
     }
   }
 
-  async listServiceFocuses() {
+  async listServiceFocuses(actor: Actor) {
+    if (!hasRole(actor, [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_STAFF])) {
+      throw new ForbiddenException('仅管理员和护理人员可查看服务关注信息')
+    }
+
+    const assignedResidentIds = isNursingStaff(actor)
+      ? await this.getAssignedResidentIds(actor.id)
+      : null
     const items = await this.prisma.serviceFocus.findMany({
+      where: assignedResidentIds
+        ? {
+            residentId: {
+              in: assignedResidentIds,
+            },
+          }
+        : undefined,
       orderBy: {
         updatedAt: 'desc',
       },
@@ -1107,7 +1184,8 @@ export class CustomerService {
     }
   }
 
-  async createServiceFocus(payload: SaveServiceFocusDto) {
+  async createServiceFocus(actor: Actor, payload: SaveServiceFocusDto) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可维护服务关注信息')
     await this.ensureResidentExists(payload.residentId)
 
     const item = await this.prisma.serviceFocus.create({
@@ -1131,7 +1209,8 @@ export class CustomerService {
     }
   }
 
-  async updateServiceFocus(id: number, payload: SaveServiceFocusDto) {
+  async updateServiceFocus(actor: Actor, id: number, payload: SaveServiceFocusDto) {
+    assertRole(actor, [ROLE_KEYS.ADMIN], '仅管理员可维护服务关注信息')
     await this.ensureResidentExists(payload.residentId)
 
     const item = await this.prisma.serviceFocus.update({
@@ -1258,6 +1337,36 @@ export class CustomerService {
     if (!user) {
       throw new NotFoundException('健康管家不存在')
     }
+  }
+
+  private assertResidentRead(actor: Actor) {
+    if (
+      !hasRole(actor, [...residentReadAllRoles, ...assignedResidentReadRoles])
+    ) {
+      throw new ForbiddenException('无权查看客户档案')
+    }
+  }
+
+  private async getAssignedResidentIds(userId: number) {
+    const today = new Date()
+    const relations = await this.prisma.serviceTarget.findMany({
+      where: {
+        managerUserId: userId,
+        AND: [
+          {
+            OR: [{ startDate: null }, { startDate: { lte: today } }],
+          },
+          {
+            OR: [{ endDate: null }, { endDate: { gte: today } }],
+          },
+        ],
+      },
+      select: {
+        residentId: true,
+      },
+    })
+
+    return relations.map((item) => item.residentId)
   }
 
   private async refreshRoomBedCount(roomId: number) {

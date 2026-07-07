@@ -1,6 +1,20 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PrismaService } from '../../prisma/prisma.service.js'
+import type { Actor } from '../../common/rbac/rbac.types.js'
+import { ROLE_KEYS } from '../../common/rbac/rbac.types.js'
+import {
+  assertRole,
+  hasRole,
+  isAdmin,
+  isNursingStaff,
+  isNursingSupervisor,
+} from '../../common/rbac/rbac.util.js'
 import type {
   GenerateCareRecordNoteDto,
   SaveCareItemDto,
@@ -88,6 +102,8 @@ function normalizeText(value?: string | null) {
   return value?.trim() || undefined
 }
 
+const nursingAdminRoles = [ROLE_KEYS.ADMIN, ROLE_KEYS.NURSING_SUPERVISOR]
+
 @Injectable()
 export class NursingService {
   private openai: OpenAiChatClient | null = null
@@ -108,7 +124,8 @@ export class NursingService {
 
   }
 
-  getModules() {
+  getModules(actor: Actor) {
+    this.assertNursingRead(actor)
     return {
       code: 200,
       message: '护理模块可用',
@@ -116,7 +133,8 @@ export class NursingService {
     }
   }
 
-  async listCareLevels() {
+  async listCareLevels(actor: Actor) {
+    this.assertNursingRead(actor)
     const items = await this.prisma.careLevel.findMany({
       orderBy: [{ isActive: 'desc' }, { code: 'asc' }],
       include: {
@@ -136,7 +154,8 @@ export class NursingService {
     }
   }
 
-  async createCareLevel(payload: SaveCareLevelDto) {
+  async createCareLevel(actor: Actor, payload: SaveCareLevelDto) {
+    assertRole(actor, nursingAdminRoles, '仅管理员和护理主管可维护护理级别')
     const item = await this.prisma.careLevel.create({
       data: {
         code: payload.code.trim(),
@@ -161,7 +180,8 @@ export class NursingService {
     }
   }
 
-  async updateCareLevel(id: number, payload: SaveCareLevelDto) {
+  async updateCareLevel(actor: Actor, id: number, payload: SaveCareLevelDto) {
+    assertRole(actor, nursingAdminRoles, '仅管理员和护理主管可维护护理级别')
     const item = await this.prisma.careLevel.update({
       where: { id },
       data: {
@@ -187,7 +207,8 @@ export class NursingService {
     }
   }
 
-  async listCareItems() {
+  async listCareItems(actor: Actor) {
+    this.assertNursingRead(actor)
     const items = await this.prisma.careItem.findMany({
       orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
       include: {
@@ -207,7 +228,8 @@ export class NursingService {
     }
   }
 
-  async createCareItem(payload: SaveCareItemDto) {
+  async createCareItem(actor: Actor, payload: SaveCareItemDto) {
+    assertRole(actor, nursingAdminRoles, '仅管理员和护理主管可维护护理内容')
     await this.ensureCareLevelExists(payload.careLevelId)
 
     const item = await this.prisma.careItem.create({
@@ -237,7 +259,8 @@ export class NursingService {
     }
   }
 
-  async updateCareItem(id: number, payload: SaveCareItemDto) {
+  async updateCareItem(actor: Actor, id: number, payload: SaveCareItemDto) {
+    assertRole(actor, nursingAdminRoles, '仅管理员和护理主管可维护护理内容')
     await this.ensureCareLevelExists(payload.careLevelId)
 
     const item = await this.prisma.careItem.update({
@@ -268,8 +291,19 @@ export class NursingService {
     }
   }
 
-  async listCareRecords() {
+  async listCareRecords(actor: Actor) {
+    this.assertNursingRead(actor)
+    const assignedResidentIds = isNursingStaff(actor)
+      ? await this.getAssignedResidentIds(actor.id)
+      : null
     const items = await this.prisma.careRecord.findMany({
+      where: assignedResidentIds
+        ? {
+            residentId: {
+              in: assignedResidentIds,
+            },
+          }
+        : undefined,
       orderBy: {
         executedAt: 'desc',
       },
@@ -298,18 +332,25 @@ export class NursingService {
     }
   }
 
-  async createCareRecord(payload: SaveCareRecordDto) {
+  async createCareRecord(actor: Actor, payload: SaveCareRecordDto) {
+    this.assertNursingRead(actor)
+    const finalOperatorId = isNursingStaff(actor) ? actor.id : payload.operatorId
+
+    if (isNursingStaff(actor)) {
+      await this.assertResidentAssignedToActor(actor, payload.residentId)
+    }
+
     await Promise.all([
       this.ensureResidentExists(payload.residentId),
       this.ensureCareItemExists(payload.careItemId),
-      this.ensureUserExists(payload.operatorId),
+      this.ensureUserExists(finalOperatorId),
     ])
 
     const item = await this.prisma.careRecord.create({
       data: {
         residentId: payload.residentId,
         careItemId: payload.careItemId,
-        operatorId: payload.operatorId,
+        operatorId: finalOperatorId,
         executedAt: new Date(payload.executedAt),
         note: normalizeText(payload.note),
       },
@@ -338,11 +379,35 @@ export class NursingService {
     }
   }
 
-  async updateCareRecord(id: number, payload: SaveCareRecordDto) {
+  async updateCareRecord(actor: Actor, id: number, payload: SaveCareRecordDto) {
+    this.assertNursingRead(actor)
+    const existing = await this.prisma.careRecord.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        operatorId: true,
+        residentId: true,
+      },
+    })
+
+    if (!existing) {
+      throw new NotFoundException('护理记录不存在')
+    }
+
+    const finalOperatorId = isNursingStaff(actor) ? actor.id : payload.operatorId
+
+    if (isNursingStaff(actor)) {
+      if (existing.operatorId !== actor.id) {
+        throw new ForbiddenException('护理人员仅可维护本人护理记录')
+      }
+
+      await this.assertResidentAssignedToActor(actor, payload.residentId)
+    }
+
     await Promise.all([
       this.ensureResidentExists(payload.residentId),
       this.ensureCareItemExists(payload.careItemId),
-      this.ensureUserExists(payload.operatorId),
+      this.ensureUserExists(finalOperatorId),
     ])
 
     const item = await this.prisma.careRecord.update({
@@ -350,7 +415,7 @@ export class NursingService {
       data: {
         residentId: payload.residentId,
         careItemId: payload.careItemId,
-        operatorId: payload.operatorId,
+        operatorId: finalOperatorId,
         executedAt: new Date(payload.executedAt),
         note: normalizeText(payload.note),
       },
@@ -379,7 +444,8 @@ export class NursingService {
     }
   }
 
-  async deleteCareRecord(id: number) {
+  async deleteCareRecord(actor: Actor, id: number) {
+    assertRole(actor, nursingAdminRoles, '仅管理员和护理主管可删除护理记录')
     const record = await this.prisma.careRecord.findUnique({
       where: { id },
     })
@@ -398,7 +464,14 @@ export class NursingService {
     }
   }
 
-  async generateCareRecordAiNote(payload: GenerateCareRecordNoteDto) {
+  async generateCareRecordAiNote(actor: Actor, payload: GenerateCareRecordNoteDto) {
+    this.assertNursingRead(actor)
+    const finalOperatorId = isNursingStaff(actor) ? actor.id : payload.operatorId
+
+    if (isNursingStaff(actor)) {
+      await this.assertResidentAssignedToActor(actor, payload.residentId)
+    }
+
     const openai = await this.getOpenAiClient()
 
     if (!openai) {
@@ -424,7 +497,7 @@ export class NursingService {
         },
       }),
       this.prisma.user.findUnique({
-        where: { id: payload.operatorId },
+        where: { id: finalOperatorId },
         select: {
           id: true,
           realName: true,
@@ -447,7 +520,7 @@ export class NursingService {
     }
 
     const completion = await this.enqueueAiRequest(() =>
-      this.createAiCompletion(openai, payload, {
+      this.createAiCompletion(openai, { ...payload, operatorId: finalOperatorId }, {
         resident,
         careItem,
         operator,
@@ -506,6 +579,46 @@ export class NursingService {
 
     if (!exists) {
       throw new NotFoundException('执行人不存在')
+    }
+  }
+
+  private assertNursingRead(actor: Actor) {
+    if (!hasRole(actor, [...nursingAdminRoles, ROLE_KEYS.NURSING_STAFF])) {
+      throw new ForbiddenException('无权访问护理模块')
+    }
+  }
+
+  private async getAssignedResidentIds(userId: number) {
+    const today = new Date()
+    const relations = await this.prisma.serviceTarget.findMany({
+      where: {
+        managerUserId: userId,
+        AND: [
+          {
+            OR: [{ startDate: null }, { startDate: { lte: today } }],
+          },
+          {
+            OR: [{ endDate: null }, { endDate: { gte: today } }],
+          },
+        ],
+      },
+      select: {
+        residentId: true,
+      },
+    })
+
+    return relations.map((item) => item.residentId)
+  }
+
+  private async assertResidentAssignedToActor(actor: Actor, residentId: number) {
+    if (!isNursingStaff(actor)) {
+      return
+    }
+
+    const residentIds = await this.getAssignedResidentIds(actor.id)
+
+    if (!residentIds.includes(residentId)) {
+      throw new ForbiddenException('护理人员仅可访问自己负责老人的护理数据')
     }
   }
 

@@ -8,7 +8,7 @@
   >
     <template #table-actions>
       <div class="table-toolbar">
-        <el-button type="primary" @click="openCreateDialog">新建护理记录</el-button>
+        <el-button v-if="canCreate" type="primary" @click="openCreateDialog">新建护理记录</el-button>
       </div>
     </template>
 
@@ -40,10 +40,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="note" label="备注" min-width="220" show-overflow-tooltip />
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column v-if="canEditAny || isNursingStaff" label="操作" width="160" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
-            <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="canDelete" text type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -80,7 +80,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="执行人">
-        <el-select v-model="form.operatorId" class="full-width" filterable>
+        <el-select v-model="form.operatorId" class="full-width" filterable :disabled="isNursingStaff">
           <el-option
             v-for="user in users"
             :key="user.id"
@@ -157,6 +157,8 @@
 
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ROLE_KEYS } from '@/constants/rbac'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import { getResidents, getUsers, type ResidentItem, type UserItem } from '@/modules/customer/api/customer.api'
 import {
   createCareRecord,
@@ -191,6 +193,16 @@ const aiPreviewNote = ref('')
 const aiGenerating = ref(false)
 const form = reactive<CareRecordForm>(createForm())
 const dialogTitle = computed(() => (form.id ? '编辑护理记录' : '新建护理记录'))
+const authStore = useAuthStore()
+const roleKey = computed(() => authStore.profile?.roleKey)
+const isNursingStaff = computed(() => roleKey.value === ROLE_KEYS.NURSING_STAFF)
+const canEditAny = computed(
+  () =>
+    roleKey.value === ROLE_KEYS.ADMIN ||
+    roleKey.value === ROLE_KEYS.NURSING_SUPERVISOR
+)
+const canCreate = computed(() => canEditAny.value || isNursingStaff.value)
+const canDelete = computed(() => canEditAny.value)
 
 onMounted(loadData)
 
@@ -199,7 +211,7 @@ function createForm(): CareRecordForm {
     id: null,
     residentId: null,
     careItemId: null,
-    operatorId: null,
+    operatorId: authStore.profile?.id ?? null,
     executedAt: new Date().toISOString().slice(0, 19),
     note: '',
   }
@@ -217,6 +229,10 @@ async function loadData() {
   residents.value = residentsRes.data
   careItems.value = itemsRes.data
   users.value = usersRes.data.filter((item) => item.status === 'ACTIVE')
+
+  if (isNursingStaff.value) {
+    form.operatorId = authStore.profile?.id ?? null
+  }
 }
 
 function resetForm() {
@@ -226,6 +242,9 @@ function resetForm() {
 
 function openCreateDialog() {
   resetForm()
+  if (isNursingStaff.value) {
+    form.operatorId = authStore.profile?.id ?? null
+  }
   dialogVisible.value = true
 }
 

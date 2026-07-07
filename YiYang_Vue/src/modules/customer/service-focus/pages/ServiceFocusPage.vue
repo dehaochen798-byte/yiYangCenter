@@ -8,7 +8,7 @@
   >
     <template #table-actions>
       <div class="table-toolbar">
-        <el-button type="primary" @click="openCreateDialog">新建服务信息</el-button>
+        <el-button v-if="canEdit" type="primary" @click="openCreateDialog">新建服务信息</el-button>
       </div>
     </template>
 
@@ -31,7 +31,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="detail" label="服务说明" min-width="240" show-overflow-tooltip />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column v-if="canEdit" label="操作" width="100" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
           </template>
@@ -99,6 +99,8 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
+import { ROLE_KEYS } from '@/constants/rbac'
+import { useAuthStore } from '@/modules/auth/store/auth.store'
 import CrudPageShell from '@/modules/shared/components/CrudPageShell.vue'
 import {
   createServiceFocus,
@@ -137,6 +139,8 @@ const residents = ref<ResidentItem[]>([])
 const dialogVisible = ref(false)
 const form = reactive<ServiceFocusForm>(createForm())
 const dialogTitle = computed(() => (form.id ? '编辑服务信息' : '新建服务信息'))
+const authStore = useAuthStore()
+const canEdit = computed(() => authStore.profile?.roleKey === ROLE_KEYS.ADMIN)
 
 onMounted(loadData)
 

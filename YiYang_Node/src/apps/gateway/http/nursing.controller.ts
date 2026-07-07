@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common'
 import { GatewayJwtGuard } from '../security/gateway-jwt.guard.js'
 import { CARE_PATTERNS } from '../../../libs/contracts/care.contract.js'
 import { SERVICE_NAMES } from '../../../libs/registry/registry.types.js'
@@ -9,6 +19,13 @@ import {
   SaveCareLevelDto,
   SaveCareRecordDto,
 } from '../../../modules/nursing/dto/nursing.dto.js'
+import type { Actor } from '../../../common/rbac/rbac.types.js'
+import {
+  assertGatewayRole,
+  gatewayRoleMatrix,
+} from '../security/gateway-rbac.util.js'
+
+type GatewayRequest = { user: Actor }
 
 @Controller('nursing')
 @UseGuards(GatewayJwtGuard)
@@ -16,105 +33,158 @@ export class NursingController {
   constructor(private readonly gatewayClient: GatewayServiceClient) {}
 
   @Get('modules')
-  getModules() {
+  getModules(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.nursingAdmin,
+      ...gatewayRoleMatrix.nursingReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.nursingModules,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Get('care-levels')
-  listCareLevels() {
+  listCareLevels(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.nursingAdmin,
+      ...gatewayRoleMatrix.nursingReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careLevelsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('care-levels')
-  createCareLevel(@Body() body: SaveCareLevelDto) {
+  createCareLevel(@Req() request: GatewayRequest, @Body() body: SaveCareLevelDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.nursingAdmin)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careLevelsCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('care-levels/:id')
-  updateCareLevel(@Param('id') id: string, @Body() body: SaveCareLevelDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.careLevelsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateCareLevel(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveCareLevelDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.nursingAdmin)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.careLevelsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Get('care-items')
-  listCareItems() {
+  listCareItems(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.nursingAdmin,
+      ...gatewayRoleMatrix.nursingReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careItemsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('care-items')
-  createCareItem(@Body() body: SaveCareItemDto) {
+  createCareItem(@Req() request: GatewayRequest, @Body() body: SaveCareItemDto) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.nursingAdmin)
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careItemsCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('care-items/:id')
-  updateCareItem(@Param('id') id: string, @Body() body: SaveCareItemDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.careItemsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateCareItem(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveCareItemDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.nursingAdmin)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.careItemsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Get('care-records')
-  listCareRecords() {
+  listCareRecords(@Req() request: GatewayRequest) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.nursingAdmin,
+      ...gatewayRoleMatrix.nursingReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careRecordsList,
-      undefined
+      this.gatewayClient.withActorOnly(request.user)
     )
   }
 
   @Post('care-records')
-  createCareRecord(@Body() body: SaveCareRecordDto) {
+  createCareRecord(@Req() request: GatewayRequest, @Body() body: SaveCareRecordDto) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.nursingAdmin,
+      ...gatewayRoleMatrix.nursingReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careRecordsCreate,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Post('care-records/ai-note')
-  generateCareRecordAiNote(@Body() body: GenerateCareRecordNoteDto) {
+  generateCareRecordAiNote(
+    @Req() request: GatewayRequest,
+    @Body() body: GenerateCareRecordNoteDto
+  ) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.nursingAdmin,
+      ...gatewayRoleMatrix.nursingReadAssigned,
+    ])
     return this.gatewayClient.send(
       SERVICE_NAMES.care,
       CARE_PATTERNS.careRecordsGenerateAiNote,
-      body
+      this.gatewayClient.withActor(request.user, body)
     )
   }
 
   @Patch('care-records/:id')
-  updateCareRecord(@Param('id') id: string, @Body() body: SaveCareRecordDto) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.careRecordsUpdate, {
-      id: Number(id),
-      data: body,
-    })
+  updateCareRecord(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: SaveCareRecordDto
+  ) {
+    assertGatewayRole(request.user, [
+      ...gatewayRoleMatrix.nursingAdmin,
+      ...gatewayRoleMatrix.nursingReadAssigned,
+    ])
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.careRecordsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
   }
 
   @Delete('care-records/:id')
-  deleteCareRecord(@Param('id') id: string) {
-    return this.gatewayClient.send(SERVICE_NAMES.care, CARE_PATTERNS.careRecordsDelete, {
-      id: Number(id),
-    })
+  deleteCareRecord(@Req() request: GatewayRequest, @Param('id') id: string) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.nursingAdmin)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.careRecordsDelete,
+      this.gatewayClient.withActorAndId(request.user, Number(id))
+    )
   }
 }
