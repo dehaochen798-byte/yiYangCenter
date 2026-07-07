@@ -15,7 +15,7 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/src/main.js",
     "start:gateway": "nest start",
-    "start:gateway:dev": "nest start --watch",
+    "start:gateway:dev": "node --watch --loader ts-node/esm src/main.ts",
     "start:service-auth": "node --loader ts-node/esm src/apps/service-auth/main.ts",
     "start:service-auth:dev": "node --watch --loader ts-node/esm src/apps/service-auth/main.ts",
     "start:service-care": "node --loader ts-node/esm src/apps/service-care/main.ts",
