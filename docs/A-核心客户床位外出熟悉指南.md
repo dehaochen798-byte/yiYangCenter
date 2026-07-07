@@ -2,147 +2,179 @@
 
 ## 你负责什么
 
-A 组负责客户管理里最基础的资源部分：
+A 组负责客户管理里的基础资源模块：
 
 - 客户档案
-- 员工/用户管理
+- 员工账号
 - 房间管理
 - 床位管理
 - 外出登记与归院
 
-注意：入住登记、退住登记已经分给 D 组。
+注意两点：
+
+- 入住登记、退住登记已经划给 D 组。
+- `客户档案` 和 `员工账号` 在最新代码里已经拆成两个独立入口，不再共用一个页面。
+
+## 最新代码先记住
+
+当前前端路由入口是：
+
+- `/customer/residents`
+  - `YiYang_Vue/src/modules/customer/resident/pages/ResidentPage.vue`
+- `/customer/users`
+  - `YiYang_Vue/src/modules/customer/user/pages/UserAccountPage.vue`
+- `/customer/bed`
+  - `YiYang_Vue/src/modules/customer/bed/pages/BedPage.vue`
+- `/customer/outing`
+  - `YiYang_Vue/src/modules/customer/outing/pages/OutingPage.vue`
+
+仓库里还保留了旧的 `YiYang_Vue/src/modules/customer/user/pages/UserPage.vue`，但当前路由已经不再指向它，答辩和讲解时要以前面 4 个最新入口为准。
 
 ## 最快熟悉顺序
 
-按这个顺序看，不要一上来就看全部代码：
-
-1. 先看路由，知道页面入口在哪里：
+1. 先看路由和菜单，知道入口拆分与角色范围：
    - `YiYang_Vue/src/app/router/modules/customer.routes.ts`
-2. 再看页面，知道按钮和表单长什么样：
-   - `YiYang_Vue/src/modules/customer/user/pages/UserPage.vue`
+   - `YiYang_Vue/src/layouts/MainLayout.vue`
+2. 再看页面：
+   - `YiYang_Vue/src/modules/customer/resident/pages/ResidentPage.vue`
+   - `YiYang_Vue/src/modules/customer/user/pages/UserAccountPage.vue`
    - `YiYang_Vue/src/modules/customer/bed/pages/BedPage.vue`
    - `YiYang_Vue/src/modules/customer/outing/pages/OutingPage.vue`
-3. 再看前端 API，知道页面调用了哪些接口：
+3. 再看前端 API：
    - `YiYang_Vue/src/modules/customer/user/api/resident.api.ts`
    - `YiYang_Vue/src/modules/customer/user/api/user.api.ts`
    - `YiYang_Vue/src/modules/customer/bed/api/room.api.ts`
    - `YiYang_Vue/src/modules/customer/bed/api/bed.api.ts`
    - `YiYang_Vue/src/modules/customer/outing/api/outing.api.ts`
-4. 最后看后端业务逻辑：
+4. 最后看后端：
    - `YiYang_Node/src/apps/gateway/http/customer.controller.ts`
    - `YiYang_Node/src/apps/gateway/services/gateway-service-client.ts`
    - `YiYang_Node/src/libs/registry/local-registry.service.ts`
    - `YiYang_Node/src/modules/customer/customer.controller.ts`
    - `YiYang_Node/src/modules/customer/customer.service.ts`
 
-## 数据怎么走
+## 角色权限怎么理解
 
-以“新增床位”为例：
+这一版代码已经接入五角色 RBAC，A 组模块不是所有人都能改：
 
-1. 用户在 `BedPage.vue` 点击新增，填写房间、床位号、床位状态。
-2. 页面调用 `createBed()`。
-3. `createBed()` 通过 `request()` 请求 `/api/customer/beds`。
-4. 请求先到 gateway：`apps/gateway/http/customer.controller.ts`。
-5. gateway 不直接查数据库，而是通过 `GatewayServiceClient` 按 `CARE_SERVICE` 到本地注册中心发现 `service-care` 实例。
-6. gateway 使用 Nest TCP 把消息转给 `service-care`。
-7. `service-care` 进入 `modules/customer/customer.controller.ts`。
-8. controller 调用 `CustomerService.createBed()`。
-9. service 先校验房间是否存在、床位编号是否重复，再使用 Prisma 写入 `Bed` 表。
-10. 创建后调用 `refreshRoomBedCount()`，刷新房间床位数量。
-11. 数据返回前端，页面刷新列表。
+- 客户档案
+  - 页面入口所有角色可见
+  - 只有管理员可新增、编辑
+  - 护理人员只能看到自己负责的老人
+- 员工账号
+  - 仅管理员可见、可维护、可重置密码
+- 房间、床位、外出
+  - 仅管理员和前台人员可见、可维护
 
 简单记法：
 
 ```txt
-Vue 页面 -> 前端 API -> request/http -> gateway -> GatewayServiceClient -> LocalRegistryService -> service-care -> CustomerService -> Prisma -> MySQL
+管理员：A 组全部可管
+前台：床位/入住/退住/外出可管
+护理主管/护理人员/膳食管理员：客户档案以查看为主
 ```
 
-## AI 调用模块位置
+## 数据怎么走
 
-当前项目里的 AI 调用功能是“护理记录 AI 小结”，入口不在 A 组客户页面里，而是在护理记录页面。A 组如果需要说明或排查 AI 接口，可以按下面这条链路找：
+以“新增床位”为例：
+
+1. 用户在 `BedPage.vue` 点击“新建床位”。
+2. 页面校验所属房间、床位编号、床位状态。
+3. 前端调用 `createBed()`，请求 `POST /api/customer/beds`。
+4. 请求先到 gateway：`YiYang_Node/src/apps/gateway/http/customer.controller.ts`。
+5. gateway 先校验 JWT 和角色，确认当前用户属于管理员或前台人员。
+6. gateway 通过 `GatewayServiceClient` 按 `CARE_SERVICE` 发现 `service-care`。
+7. gateway 用 Nest TCP 把消息转给 `service-care`。
+8. `service-care` 进入 `modules/customer/customer.controller.ts`。
+9. controller 调用 `CustomerService.createBed()`。
+10. service 校验房间存在、床位编号不能为空、同房间内床位编号不重复。
+11. Prisma 写入 `Bed` 表。
+12. 调用 `refreshRoomBedCount()` 回写房间的 `bedCount`。
+13. 数据返回前端，页面提示成功并刷新列表。
+
+简单记法：
 
 ```txt
-CareRecordPage.vue
-  -> nursing.api.ts
-  -> gateway nursing.controller.ts
-  -> GatewayServiceClient
-  -> service-care CareMessageController
-  -> NursingService.generateCareRecordAiNote()
-  -> OpenAI SDK chat.completions
-  -> BigModel / GLM 文本模型
+Vue 页面 -> 前端 API -> /api/customer/... -> gateway -> GatewayServiceClient -> service-care -> CustomerService -> Prisma -> MySQL
 ```
 
-关键文件位置：
+## 四块业务的关键点
 
-- 前端按钮和预览弹窗：
-  - `YiYang_Vue/src/modules/nursing/care-record/pages/CareRecordPage.vue`
-  - 点击 `AI生成护理小结` 后先生成内容，再弹出 `AI护理小结预览`，用户确认后才写回备注。
-- 前端接口封装：
-  - `YiYang_Vue/src/modules/nursing/api/nursing.api.ts`
-  - 方法：`generateCareRecordAiNote()`
-  - 请求地址：`POST /api/nursing/care-records/ai-note`
-- gateway HTTP 入口：
-  - `YiYang_Node/src/apps/gateway/http/nursing.controller.ts`
-  - 方法：`generateCareRecordAiNote()`
-- 微服务消息协议：
-  - `YiYang_Node/src/libs/contracts/care.contract.ts`
-  - pattern：`careRecordsGenerateAiNote`
-- service-care 接收端：
-  - `YiYang_Node/src/apps/service-care/transport/care-message.controller.ts`
-  - 方法：`generateCareRecordAiNote()`
-- AI 核心调用：
-  - `YiYang_Node/src/modules/nursing/nursing.service.ts`
-  - 方法：`generateCareRecordAiNote()`、`getOpenAiClient()`、`createAiCompletion()`
-  - SDK 调用：`openai.chat.completions.create(...)`
-- AI 配置读取：
-  - `YiYang_Node/src/libs/config-center/local-env-config-center.ts`
-  - 环境变量来自：`YiYang_Node/.env`
+### 1. 客户档案
 
-AI 相关环境变量：
+- 页面是 `ResidentPage.vue`，不再和员工账号混在一起。
+- 初始化会并行请求 `getResidents()` 和 `getCareLevels()`。
+- 新增、编辑时会校验姓名、手机号、年龄、性别、护理级别等字段。
+- 后端会校验：
+  - 客户是否存在
+  - 手机号是否唯一
+  - 护理级别是否存在
+- 查询列表时会把 `currentBed`、`careLevel` 一起带回，所以表格里可以直接展示床位和护理级别。
 
-```env
-ZAI_API_KEY="..."
-ZAI_BASE_URL="https://open.bigmodel.cn/api/paas/v4/"
-ZAI_MODEL="glm-4.7"
-ZAI_PROXY_URL=""
-```
+### 2. 员工账号
 
-这里接的是 GLM 的 OpenAI 兼容文本对话模型，代码使用的是 `chat.completions`，所以同类别文本模型一般只需要改 `ZAI_MODEL`。如果改成图片、向量、语音等不同类别模型，就不能只改模型名，需要换接口和入参。
+- 页面是 `UserAccountPage.vue`。
+- 初始化调用 `getUsers()`。
+- 新增和编辑都要校验姓名、手机号、年龄、状态、岗位、部门等字段。
+- 后端会校验手机号唯一。
+- 新建员工账号时，默认密码是 `123456`，后端会哈希后写入 `passwordHash`。
+- 页面支持“重置密码”，走 `PATCH /api/customer/users/:id/reset-password`，重置后仍然回到 `123456`。
 
-注意：AI 生成可能比普通业务接口慢，当前后端已经把 AI SDK 超时和 gateway 到 service-care 的 TCP 响应超时调大，相关文件是：
+### 3. 床位管理
 
-- `YiYang_Node/src/modules/nursing/nursing.service.ts`
-- `YiYang_Node/src/libs/microservices/client-proxy.util.ts`
+- `BedPage.vue` 同页维护“房间列表”和“床位列表”。
+- 初始化并行加载 `getRooms()` 与 `getBeds()`。
+- 床位新增、修改时，后端会校验：
+  - 房间是否存在
+  - 床位编号是否为空
+  - 同房间内床位编号是否重复
+  - 如果床位已有入住客户，不能直接改为空床
+- 后端还实现了 `DELETE /api/customer/beds/:id`：
+  - 删除方式是软删除
+  - 已入住床位不能删除
+  - 删除后会刷新房间床位数并发布审计事件
+- 当前前端页面没有直接放出“删除床位”按钮，但后端接口已经准备好了。
+
+### 4. 外出管理
+
+- `OutingPage.vue` 初始化会并行请求 `getOutings()` 与 `getResidents()`。
+- 新增外出时，客户下拉只显示 `ACTIVE` 在住客户。
+- 后端会校验：
+  - 客户必须存在
+  - 客户必须是在住状态
+  - 不能存在未归院的外出记录
+- 外出登记成功后，状态写为 `OUTING`。
+- 归院登记时会回写 `actualReturnAt`，并把状态改为 `RETURNED`。
 
 ## 消息中间件与审计日志
 
-A 组的床位和外出模块已经接入 Redis Stream 消息中间件，核心目的是异步记录关键业务操作：
+A 组里有 3 类成功操作会发领域事件：
+
+- `customer.bed.deleted`
+- `customer.outing.created`
+- `customer.outing.returned`
+
+流程是：
 
 ```txt
-CustomerService 完成业务写库
+CustomerService 完成写库
   -> MessageBrokerService.publish()
   -> Redis Stream: yiyang:domain-events
   -> message-consumer
   -> AuditLog 审计日志表
 ```
 
-当前 A 组会发布这些事件：
-
-- `customer.bed.deleted`：床位删除成功后发布
-- `customer.outing.created`：外出登记成功后发布
-- `customer.outing.returned`：归院登记成功后发布
-
-消费者消费成功后会写入 `AuditLog`，同时在控制台打印类似：
-
-```txt
-[message-consumer] customer.outing.created eventId=... summary=张三 已办理外出登记
-```
-
-这部分答辩时重点讲“异步解耦”：床位删除、外出、归院的主流程先正常返回，审计日志由消费者异步写入，后续可以扩展成家属通知、外出风险提醒、统计分析。
+答辩时可以讲“主流程先成功返回，审计记录异步落表”，这就是异步解耦。
 
 ## 接口错误怎么返回
 
-业务校验失败时，后端会抛出 `BadRequestException` 或 `NotFoundException`，例如重复创建同房间的同名床位会返回“该房间已存在相同床位编号”。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 通过 `GatewayServiceClient` 内部的 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+业务校验失败时，后端一般抛：
+
+- `BadRequestException`
+- `NotFoundException`
+- `ForbiddenException`
+
+错误先在微服务里被 `RpcExceptionsFilter` 包装，再由 gateway 还原成统一 HTTP 返回。最终前端拿到的格式类似：
 
 ```json
 {
@@ -153,8 +185,6 @@ CustomerService 完成业务写库
 }
 ```
 
-如果漏掉了业务提前校验，Prisma 的常见数据库异常也会兜底转换，比如唯一约束冲突会返回 400，记录不存在会返回 404。
-
 ## 主要接口
 
 客户档案：
@@ -163,11 +193,12 @@ CustomerService 完成业务写库
 - `POST /api/customer/residents`
 - `PATCH /api/customer/residents/:id`
 
-用户管理：
+员工账号：
 
 - `GET /api/customer/users`
 - `POST /api/customer/users`
 - `PATCH /api/customer/users/:id`
+- `PATCH /api/customer/users/:id/reset-password`
 
 房间管理：
 
@@ -188,47 +219,48 @@ CustomerService 完成业务写库
 - `POST /api/customer/outings`
 - `PATCH /api/customer/outings/:id/return`
 
-合计约 16 个接口。
+合计 17 个接口。
 
-## 用了什么方法
+## 前后端主要方法
 
 前端主要方法：
 
-- `getResidents()`：查询客户列表
-- `createResident()`：新增客户
-- `updateResident()`：修改客户
-- `getUsers()` / `createUser()` / `updateUser()`：用户管理
-- `getRooms()` / `createRoom()` / `updateRoom()`：房间管理
-- `getBeds()` / `createBed()` / `updateBed()`：床位管理
-- `getOutings()` / `createOuting()` / `returnOuting()`：外出和归院
+- `getResidents()` / `createResident()` / `updateResident()`
+- `getUsers()` / `createUser()` / `updateUser()` / `resetUserPassword()`
+- `getRooms()` / `createRoom()` / `updateRoom()`
+- `getBeds()` / `createBed()` / `updateBed()`
+- `getOutings()` / `createOuting()` / `returnOuting()`
 
 后端主要方法：
 
 - `listResidents()` / `createResident()` / `updateResident()`
-- `listUsers()` / `createUser()` / `updateUser()`
+- `listUsers()` / `createUser()` / `updateUser()` / `resetUserPassword()`
 - `listRooms()` / `createRoom()` / `updateRoom()`
 - `listBeds()` / `createBed()` / `updateBed()` / `deleteBed()`
 - `listOutings()` / `createOuting()` / `returnOuting()`
+- `refreshRoomBedCount()`：回写房间床位数
 
 ## 数据库重点
 
 重点看这些表：
 
 - `Resident`：客户档案
-- `User`：员工/系统用户
+- `User`：员工账号
 - `Room`：房间
 - `Bed`：床位
 - `Outing`：外出记录
 
-几个关键字段要懂：
+关键字段：
 
-- `Resident.status`：客户状态，比如待入住、在住、已退住
-- `Resident.currentBedId`：客户当前床位
-- `Bed.status`：床位状态，比如空床、占床、停用
-- `Bed.isDelete`：床位是否软删除
+- `Resident.status`：待入住、在住、已退住
+- `Resident.currentBedId`：当前床位
+- `Resident.careLevelId`：默认护理级别
+- `Bed.status`：空床、占床、停用
+- `Bed.isDelete`：软删除标识
+- `Room.bedCount`：房间床位数冗余字段
 - `Outing.status`：外出状态
 - `Outing.actualReturnAt`：实际归院时间
 
 ## 你答辩时可以这样说
 
-我负责客户、员工、房间、床位和外出模块。前端页面通过 API 文件调用 `/api/customer/...` 接口，请求先进入 gateway，gateway 通过注册中心按 `CARE_SERVICE` 发现 `service-care`，再用 Nest TCP 转到 customer service。后端主要用 Prisma 的 `findMany`、`create`、`update` 操作数据库。床位模块会校验房间是否存在，删除床位时采用软删除；外出模块会校验客户必须是在住状态，并且不能有未归院记录。归院时更新外出记录的实际归院时间和状态。床位删除、外出登记、归院登记成功后还会发布 Redis Stream 消息，由 `message-consumer` 异步写入 `AuditLog` 审计日志表。
+我负责客户档案、员工账号、房间床位和外出模块。最新代码里，客户档案和员工账号已经拆成两个独立页面，路由分别是 `/customer/residents` 和 `/customer/users`。前端页面通过 API 调用 `/api/customer/...` 接口，请求先进入 gateway，gateway 完成 JWT 和 RBAC 校验后，通过注册中心发现 `service-care`，再用 Nest TCP 转发到 `CustomerService`。后端主要使用 Prisma 操作 `Resident`、`User`、`Room`、`Bed`、`Outing` 等表。床位模块会校验房间存在、编号唯一，并在增删改后自动刷新房间床位数；外出模块会校验客户必须是在住状态且不能有未归院记录，归院时更新实际归院时间和状态。床位删除、外出登记、归院登记成功后还会发布 Redis Stream 事件，由消费者异步写入审计日志表。

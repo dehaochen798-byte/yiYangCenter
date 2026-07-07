@@ -8,25 +8,40 @@ D 组负责三块内容：
 - 工作台统计
 - 入住登记、退住登记
 
-入住登记、退住登记原来属于 A 组，现在分给 D 组。D 组要重点理解“入住会占床，退住会释放床位”。
+这一组最核心的业务链路是：
+
+```txt
+登录后进入工作台
+  -> 根据角色显示不同菜单和快捷入口
+  -> 前台/管理员办理入住退住
+  -> 入住占床，退住释放床位
+```
+
+## 最新代码先记住
+
+这一版系统基础已经接入 RBAC，前后端都做了权限控制：
+
+- 路由守卫会校验登录状态和角色，不符合权限直接进 `/403`
+- 工作台所有角色可见
+- 入住登记、退住登记只允许管理员和前台人员进入
+- 登录后访问 `/auth/login` 或 `/auth/register` 会被重定向到 `/dashboard`
 
 ## 最快熟悉顺序
 
-1. 先看登录和布局入口：
+1. 先看登录和路由守卫：
    - `YiYang_Vue/src/modules/auth/pages/LoginPage.vue`
    - `YiYang_Vue/src/modules/auth/pages/RegisterPage.vue`
    - `YiYang_Vue/src/app/guards/authGuard.ts`
+   - `YiYang_Vue/src/modules/auth/store/auth.store.ts`
+2. 再看布局和菜单：
    - `YiYang_Vue/src/layouts/MainLayout.vue`
-2. 再看工作台：
+3. 再看工作台：
    - `YiYang_Vue/src/modules/dashboard/pages/DashboardPage.vue`
    - `YiYang_Vue/src/modules/dashboard/api/dashboard.api.ts`
-3. 再看入住退住页面：
+4. 再看入住退住页面：
    - `YiYang_Vue/src/modules/customer/check-in/pages/CheckInPage.vue`
    - `YiYang_Vue/src/modules/customer/check-out/pages/CheckOutPage.vue`
-4. 再看入住退住 API：
-   - `YiYang_Vue/src/modules/customer/check-in/api/check-in.api.ts`
-   - `YiYang_Vue/src/modules/customer/check-out/api/check-out.api.ts`
-5. 最后看后端：
+5. 再看后端：
    - `YiYang_Node/src/apps/gateway/http/auth.controller.ts`
    - `YiYang_Node/src/apps/gateway/http/dashboard.controller.ts`
    - `YiYang_Node/src/apps/gateway/http/customer.controller.ts`
@@ -42,32 +57,77 @@ D 组负责三块内容：
 
 1. 用户在 `LoginPage.vue` 输入手机号和密码。
 2. 页面调用 `loginApi()`。
-3. 前端请求 `/api/auth/login`。
+3. 前端请求 `POST /api/auth/login`。
 4. gateway 的 `auth.controller.ts` 接收请求。
-5. gateway 通过 `GatewayServiceClient` 按 `AUTH_SERVICE` 到本地注册中心发现 `service-auth` 实例。
-6. gateway 使用 Nest TCP 把消息转到 auth 服务。
-7. `AuthService` 校验手机号和密码。
+5. gateway 通过 `GatewayServiceClient` 按 `AUTH_SERVICE` 发现 `service-auth`。
+6. gateway 使用 Nest TCP 把消息转给认证服务。
+7. `AuthService.login()` 根据手机号查询用户并校验密码。
 8. 校验成功后生成 JWT token。
-9. 前端保存 token，后续请求带上 token。
-10. 路由守卫 `authGuard.ts` 根据登录状态控制能不能进入后台页面。
+9. 后端同时返回 `profile`，其中包含 `roleName` 和 `roleKey`。
+10. 前端调用 `authStore.setAuth()` 保存 token 和用户资料。
+11. 路由守卫 `authGuard.ts` 后续根据 `isLoggedIn` 和 `roles` 判断是否允许访问页面。
+
+## 注册数据怎么走
+
+注册流程仍然保留：
+
+1. 用户在 `RegisterPage.vue` 填写手机号、姓名、年龄、性别和密码。
+2. 页面调用 `registerApi()`。
+3. 前端请求 `POST /api/auth/register`。
+4. gateway 转发到 `AuthService.register()`。
+5. 后端先校验手机号是否已注册。
+6. 再把密码哈希后写入 `User` 表。
+7. 返回“注册成功”，用户再回到登录页登录。
+
+## 路由守卫怎么工作
+
+前端守卫逻辑是：
+
+1. 访问需要登录的页面时，如果 `authStore.isLoggedIn === false`，强制跳转 `/auth/login`。
+2. 会把原目标地址放到 `redirect` 参数里，登录成功后再跳回原页面。
+3. 已登录用户如果访问 `/auth/login` 或 `/auth/register`，直接跳转 `/dashboard`。
+4. 对需要角色的页面，会读取路由 `meta.roles`。
+5. 如果当前 `profile.roleKey` 不在允许范围内，跳转 `/403`。
+
+这说明当前系统不是“只隐藏菜单”，而是真正做了路由级准入控制。
+
+## 工作台数据怎么走
+
+以“加载工作台”为例：
+
+1. 用户进入 `/dashboard`。
+2. 页面调用 `getDashboardSummary()`。
+3. 前端请求 `GET /api/dashboard/summary`。
+4. gateway 的 `dashboard.controller.ts` 先校验用户已登录且有工作台访问权限。
+5. gateway 把请求转发到 `service-care`。
+6. `DashboardService.getSummary()` 并行统计多张业务表。
+7. 后端返回：
+   - 客户总数、在住数、待入住数、已退住数
+   - 空床数、占床数、停用床数
+   - 今日护理记录数
+   - 外出中人数
+   - 进行中服务数
+   - 最近入住、最近外出、最近护理记录
+   - 护理级别分布、房间占用概览
+8. 前端把这些数据渲染成卡片、图表、时间线和快捷入口。
 
 ## 入住数据怎么走
 
 以“办理入住”为例：
 
-1. 用户在 `CheckInPage.vue` 选择客户、空床和入住时间。
+1. 用户在 `CheckInPage.vue` 选择客户、空床、入住时间和备注。
 2. 页面调用 `createCheckIn()`。
-3. 前端请求 `/api/customer/check-ins`。
-4. 请求进入 gateway 的 `customer.controller.ts`。
-5. gateway 通过 `GatewayServiceClient` 按 `CARE_SERVICE` 到本地注册中心发现 `service-care` 实例。
-6. gateway 使用 Nest TCP 把消息转给 `service-care`。
-7. 后端调用 `CustomerService.createCheckIn()`。
-8. service 先查客户和床位是否存在。
-9. 如果客户已经有床位，报错。
-10. 如果床位不是空床，报错。
-11. 通过后开启 Prisma 事务 `$transaction`。
-12. 创建 `CheckIn` 入住记录。
-13. 更新 `Resident.status = ACTIVE`，并写入 `Resident.currentBedId`。
+3. 前端请求 `POST /api/customer/check-ins`。
+4. gateway 先校验角色必须是管理员或前台人员。
+5. gateway 通过注册中心发现 `service-care`。
+6. 后端调用 `CustomerService.createCheckIn()`。
+7. service 先确认客户和床位存在。
+8. 如果客户已经有当前床位，直接报错。
+9. 如果床位不是空床，直接报错。
+10. 通过后开启 Prisma 事务 `$transaction`。
+11. 创建 `CheckIn` 入住记录。
+12. 更新 `Resident.status = ACTIVE`。
+13. 更新 `Resident.currentBedId = bed.id`。
 14. 更新 `Bed.status = OCCUPIED`。
 15. 返回入住记录，页面刷新列表。
 
@@ -75,40 +135,56 @@ D 组负责三块内容：
 
 以“办理退住”为例：
 
-1. 用户在 `CheckOutPage.vue` 选择当前在住客户，填写退住时间和原因。
+1. 用户在 `CheckOutPage.vue` 选择当前在住客户，填写退住时间、原因和交接说明。
 2. 页面调用 `createCheckOut()`。
-3. 前端请求 `/api/customer/check-outs`。
-4. 请求进入 gateway，gateway 通过注册中心发现 `service-care`。
-5. 后端调用 `CustomerService.createCheckOut()`。
-6. service 先确认客户存在。
+3. 前端请求 `POST /api/customer/check-outs`。
+4. gateway 校验角色必须是管理员或前台人员。
+5. 请求转发到 `service-care`。
+6. `CustomerService.createCheckOut()` 先确认客户存在。
 7. 如果客户没有当前床位，说明未入住，直接报错。
 8. 通过后开启 Prisma 事务 `$transaction`。
 9. 创建 `CheckOut` 退住记录。
-10. 更新 `Resident.status = CHECKED_OUT`，并清空 `Resident.currentBedId`。
-11. 更新 `Bed.status = VACANT`。
-12. 返回退住记录，页面刷新列表。
+10. 更新 `Resident.status = CHECKED_OUT`。
+11. 清空 `Resident.currentBedId`。
+12. 更新 `Bed.status = VACANT`。
+13. 返回退住记录，页面刷新列表。
 
 简单记法：
 
 ```txt
-入住：创建入住记录 + 客户变在住 + 床位变占用
-退住：创建退住记录 + 客户变退住 + 床位变空床
+入住：创建入住记录 + 客户改为在住 + 床位改为占床
+退住：创建退住记录 + 客户改为退住 + 床位改为空床
 ```
 
 ## 接口错误怎么返回
 
-登录、入住、退住等接口出现业务错误时，service 会抛出 `BadRequestException`、`UnauthorizedException` 或 `NotFoundException`。请求经过微服务时，`RpcExceptionsFilter` 会把错误状态码和错误信息传回 gateway，gateway 通过 `GatewayServiceClient` 内部的 `sendTcpMessage()` 还原成 HTTP 错误，最后统一返回：
+登录、工作台、入住、退住常见错误来源：
+
+- 手机号或密码错误
+- 未登录访问后台页面
+- 角色不匹配
+- 客户不存在
+- 床位不存在
+- 床位不可分配
+- 客户未入住却办理退住
+
+后端一般抛：
+
+- `UnauthorizedException`
+- `ForbiddenException`
+- `BadRequestException`
+- `NotFoundException`
+
+最终前端会收到统一格式，例如：
 
 ```json
 {
   "code": 400,
-  "message": "错误原因",
-  "path": "/api/...",
+  "message": "当前床位不可分配",
+  "path": "/api/customer/check-ins",
   "timestamp": "..."
 }
 ```
-
-如果漏掉了业务提前校验，Prisma 的常见数据库异常也会兜底转换，比如唯一约束冲突会返回 400，记录不存在会返回 404。
 
 ## 主要接口
 
@@ -133,56 +209,53 @@ D 组负责三块内容：
 
 辅助理解接口：
 
+- `GET /api/customer/overview`
 - `GET /api/health`
 - `GET /api/system/ping`
-- `GET /api/customer/overview`
 
-严格算业务接口约 7 个，加上健康检查、系统 ping、客户概览后约 10 个。
+严格算核心业务接口是 7 个，加上辅助接口后约 10 个。
 
-## 用了什么方法
+## 前后端主要方法
 
 前端主要方法：
 
 - `loginApi()`：登录
 - `registerApi()`：注册
 - `getDashboardSummary()`：获取工作台数据
-- `getCheckIns()`：查询入住记录
-- `createCheckIn()`：办理入住
-- `getCheckOuts()`：查询退住记录
-- `createCheckOut()`：办理退住
+- `getCheckIns()` / `createCheckIn()`
+- `getCheckOuts()` / `createCheckOut()`
 
 后端主要方法：
 
-- `AuthService.login()`：登录校验并生成 token
+- `AuthService.login()`：登录并生成 token
 - `AuthService.register()`：注册用户
-- `DashboardService.getSummary()`：统计客户、床位、护理、外出等数据
-- `CustomerService.listCheckIns()`：查询入住记录
-- `CustomerService.createCheckIn()`：办理入住
-- `CustomerService.listCheckOuts()`：查询退住记录
-- `CustomerService.createCheckOut()`：办理退住
+- `DashboardService.getSummary()`：聚合工作台统计
+- `CustomerService.listCheckIns()` / `createCheckIn()`
+- `CustomerService.listCheckOuts()` / `createCheckOut()`
 
 ## 数据库重点
 
-登录相关：
+认证相关：
 
-- `User`：用户账号和密码哈希
+- `User`：账号、密码哈希、岗位
 
 工作台相关：
 
-- `Resident`：客户数量和状态统计
-- `Bed`：空床、占床、停用床统计
-- `CareRecord`：今日护理记录统计
-- `Outing`：当前外出统计
-- `ServiceFocus`：服务关注统计
+- `Resident`：客户状态统计
+- `Bed`：床位资源统计
+- `CareRecord`：今日护理统计
+- `Outing`：外出统计
+- `ServiceFocus`：进行中服务统计
+- `CheckIn`：最近入住
 
 入住退住相关：
 
-- `CheckIn`：入住历史记录
-- `CheckOut`：退住历史记录
-- `Resident.currentBedId`：客户当前占用床位
+- `CheckIn`：入住历史
+- `CheckOut`：退住历史
+- `Resident.currentBedId`：当前床位
 - `Resident.status`：客户状态
 - `Bed.status`：床位状态
 
 ## 你答辩时可以这样说
 
-我负责系统基础、工作台和入住退住。登录注册通过 auth 模块完成，请求进入 gateway 后会通过注册中心发现 `service-auth`；工作台和入住退住会通过注册中心发现 `service-care`。登录成功后返回 token，前端路由守卫根据 token 控制页面访问。工作台通过 `DashboardService.getSummary()` 聚合客户、床位、护理、外出和服务数据。入住和退住是状态流转最关键的部分，后端使用 Prisma 的 `$transaction` 保证记录创建、客户状态更新、床位状态更新同时成功或同时失败，避免出现客户入住了但床位没变、或者床位释放了但退住记录没写的情况。
+我负责系统基础、工作台和入住退住。登录注册通过 auth 模块完成，登录成功后后端返回 token 和带 `roleKey` 的用户资料，前端存入 `authStore`，路由守卫再根据登录状态和路由 `meta.roles` 控制页面访问，无权访问会跳到 `403`。工作台通过 `DashboardService.getSummary()` 聚合客户、床位、护理、外出和服务数据，前端渲染成卡片、图表和时间线。入住和退住是典型的状态流转场景，后端使用 Prisma 的 `$transaction` 保证“记录创建 + 客户状态变更 + 床位状态变更”要么一起成功，要么一起失败，避免出现客户已入住但床位没占用，或者客户已退住但床位没释放的问题。
