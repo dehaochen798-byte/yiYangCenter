@@ -17,6 +17,8 @@ import type {
   SaveServiceFocusDto,
   SaveServiceTargetDto,
   SaveUserDto,
+  UpdateCheckInDto,
+  UpdateCheckOutDto,
 } from '../../../modules/customer/dto/customer.dto.js'
 import type {
   GenerateCareRecordNoteDto,
@@ -174,6 +176,11 @@ export class CareMessageController {
     return this.customerService.createCheckIn(payload.actor, payload.data)
   }
 
+  @MessagePattern(CARE_PATTERNS.checkInsUpdate)
+  updateCheckIn(payload: ActorUpdatePayload<UpdateCheckInDto>) {
+    return this.customerService.updateCheckIn(payload.actor, payload.id, payload.data)
+  }
+
   @MessagePattern(CARE_PATTERNS.checkInsDelete)
   deleteCheckIn(payload: ActorIdPayload) {
     return this.customerService.deleteCheckIn(payload.actor, payload.id)
@@ -187,6 +194,11 @@ export class CareMessageController {
   @MessagePattern(CARE_PATTERNS.checkOutsCreate)
   createCheckOut(payload: ActorPayload<CreateCheckOutDto>) {
     return this.customerService.createCheckOut(payload.actor, payload.data)
+  }
+
+  @MessagePattern(CARE_PATTERNS.checkOutsUpdate)
+  updateCheckOut(payload: ActorUpdatePayload<UpdateCheckOutDto>) {
+    return this.customerService.updateCheckOut(payload.actor, payload.id, payload.data)
   }
 
   @MessagePattern(CARE_PATTERNS.checkOutsDelete)

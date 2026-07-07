@@ -27,8 +27,9 @@
         </el-table-column>
         <el-table-column prop="reason" label="退住原因" min-width="180" show-overflow-tooltip />
         <el-table-column prop="handoverNote" label="交接说明" min-width="220" show-overflow-tooltip />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
+            <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
             <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -39,14 +40,14 @@
 
   <el-dialog
     v-model="dialogVisible"
-    title="办理退住"
+    :title="dialogTitle"
     width="680px"
     destroy-on-close
     @closed="resetForm"
   >
     <el-form label-position="top" :model="form" @submit.prevent>
       <el-form-item label="客户">
-        <el-select v-model="form.residentId" class="full-width" filterable>
+        <el-select v-model="form.residentId" class="full-width" filterable :disabled="Boolean(form.id)">
           <el-option
             v-for="resident in activeResidents"
             :key="resident.id"
@@ -74,7 +75,9 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="closeDialog">取消</el-button>
-        <el-button type="primary" @click="submitForm">提交退住登记</el-button>
+        <el-button type="primary" @click="submitForm">
+          {{ form.id ? '更新退住登记' : '提交退住登记' }}
+        </el-button>
       </div>
     </template>
   </el-dialog>
@@ -87,33 +90,45 @@ import {
   createCheckOut,
   deleteCheckOut,
   getCheckOuts,
+  updateCheckOut,
   type CheckOutItem,
 } from '@/modules/customer/check-out/api'
 import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDateTime } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
+type CheckOutForm = {
+  id: number | null
+  residentId: number | null
+  checkOutAt: string
+  reason: string
+  handoverNote: string
+}
+
 const checkOuts = ref<CheckOutItem[]>([])
 const residents = ref<ResidentItem[]>([])
 const dialogVisible = ref(false)
-const form = reactive({
-  residentId: null as number | null,
-  checkOutAt: new Date().toISOString().slice(0, 19),
-  reason: '',
-  handoverNote: '',
-})
+const form = reactive<CheckOutForm>(createForm())
+const dialogTitle = computed(() => (form.id ? '编辑退住登记' : '办理退住'))
 
-const activeResidents = computed(() => residents.value.filter((item) => item.status === 'ACTIVE'))
+const activeResidents = computed(() =>
+  residents.value.filter((item) => item.id === form.residentId || item.status === 'ACTIVE')
+)
 
 onMounted(loadData)
 
-function resetForm() {
-  Object.assign(form, {
+function createForm(): CheckOutForm {
+  return {
+    id: null,
     residentId: null,
     checkOutAt: new Date().toISOString().slice(0, 19),
     reason: '',
     handoverNote: '',
-  })
+  }
+}
+
+function resetForm() {
+  Object.assign(form, createForm())
 }
 
 function openCreateDialog() {
@@ -129,6 +144,17 @@ async function loadData() {
   const [checkOutRes, residentRes] = await Promise.all([getCheckOuts(), getResidents()])
   checkOuts.value = checkOutRes.data
   residents.value = residentRes.data
+}
+
+function startEdit(row: CheckOutItem) {
+  Object.assign(form, {
+    id: row.id,
+    residentId: row.residentId,
+    checkOutAt: row.checkOutAt,
+    reason: row.reason || '',
+    handoverNote: row.handoverNote || '',
+  })
+  dialogVisible.value = true
 }
 
 async function handleDelete(row: CheckOutItem) {
@@ -163,13 +189,23 @@ async function submitForm() {
     return
   }
 
-  await createCheckOut({
-    residentId: form.residentId || undefined,
-    checkOutAt: form.checkOutAt,
-    reason: form.reason,
-    handoverNote: form.handoverNote,
-  })
-  ElMessage.success('退住登记成功')
+  if (form.id) {
+    await updateCheckOut(form.id, {
+      checkOutAt: form.checkOutAt,
+      reason: form.reason,
+      handoverNote: form.handoverNote,
+    })
+    ElMessage.success('退住登记更新成功')
+  } else {
+    await createCheckOut({
+      residentId: form.residentId || undefined,
+      checkOutAt: form.checkOutAt,
+      reason: form.reason,
+      handoverNote: form.handoverNote,
+    })
+    ElMessage.success('退住登记成功')
+  }
+
   closeDialog()
   resetForm()
   await loadData()

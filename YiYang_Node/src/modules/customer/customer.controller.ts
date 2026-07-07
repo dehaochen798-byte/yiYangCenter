@@ -13,6 +13,8 @@ import {
   SaveServiceFocusDto,
   SaveServiceTargetDto,
   SaveUserDto,
+  UpdateCheckInDto,
+  UpdateCheckOutDto,
 } from './dto/customer.dto.js'
 import { CustomerService } from './customer.service.js'
 import type { Actor } from '../../common/rbac/rbac.types.js'
@@ -161,6 +163,15 @@ export class CustomerController {
     return this.customerService.createCheckIn(request.user, body)
   }
 
+  @Patch('check-ins/:id')
+  updateCheckIn(
+    @Req() request: AuthRequest,
+    @Param('id') id: string,
+    @Body() body: UpdateCheckInDto
+  ) {
+    return this.customerService.updateCheckIn(request.user, Number(id), body)
+  }
+
   @Delete('check-ins/:id')
   deleteCheckIn(@Req() request: AuthRequest, @Param('id') id: string) {
     return this.customerService.deleteCheckIn(request.user, Number(id))
@@ -174,6 +185,15 @@ export class CustomerController {
   @Post('check-outs')
   createCheckOut(@Req() request: AuthRequest, @Body() body: CreateCheckOutDto) {
     return this.customerService.createCheckOut(request.user, body)
+  }
+
+  @Patch('check-outs/:id')
+  updateCheckOut(
+    @Req() request: AuthRequest,
+    @Param('id') id: string,
+    @Body() body: UpdateCheckOutDto
+  ) {
+    return this.customerService.updateCheckOut(request.user, Number(id), body)
   }
 
   @Delete('check-outs/:id')

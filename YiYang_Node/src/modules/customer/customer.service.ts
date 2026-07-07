@@ -44,6 +44,8 @@ import type {
   SaveServiceFocusDto,
   SaveServiceTargetDto,
   SaveUserDto,
+  UpdateCheckInDto,
+  UpdateCheckOutDto,
 } from './dto/customer.dto.js'
 
 function toDate(value?: string | null) {
@@ -875,6 +877,112 @@ export class CustomerService {
     }
   }
 
+  async updateCheckIn(actor: Actor, id: number, payload: UpdateCheckInDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可编辑入住登记')
+    const record = await this.prisma.checkIn.findUnique({
+      where: { id },
+      include: {
+        resident: true,
+        bed: true,
+      },
+    })
+
+    if (!record) {
+      throw new NotFoundException('入住记录不存在')
+    }
+
+    const latestCheckIn = await this.prisma.checkIn.findFirst({
+      where: {
+        residentId: record.residentId,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!latestCheckIn || latestCheckIn.id !== id) {
+      throw new BadRequestException('仅允许编辑该客户最近一次入住登记')
+    }
+
+    if (
+      record.resident.status !== ResidenceStatus.ACTIVE ||
+      record.resident.currentBedId !== record.bedId
+    ) {
+      throw new BadRequestException('该入住记录已影响后续流程，请先处理对应退住登记')
+    }
+
+    const nextBed = await this.prisma.bed.findUnique({
+      where: { id: payload.bedId },
+      include: {
+        currentResident: true,
+      },
+    })
+
+    if (!nextBed || nextBed.isDelete) {
+      throw new NotFoundException('床位不存在')
+    }
+
+    if (
+      nextBed.id !== record.bedId &&
+      (nextBed.status !== BedStatus.VACANT || nextBed.currentResident)
+    ) {
+      throw new BadRequestException('当前床位不可分配')
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.checkIn.update({
+        where: { id },
+        data: {
+          bedId: nextBed.id,
+          checkInAt: new Date(payload.checkInAt),
+          note: normalizeText(payload.note),
+        },
+        include: {
+          resident: true,
+          bed: {
+            include: {
+              room: true,
+            },
+          },
+        },
+      })
+
+      if (nextBed.id !== record.bedId) {
+        await tx.resident.update({
+          where: { id: record.residentId },
+          data: {
+            currentBedId: nextBed.id,
+          },
+        })
+
+        await tx.bed.update({
+          where: { id: record.bedId },
+          data: {
+            status: BedStatus.VACANT,
+          },
+        })
+
+        await tx.bed.update({
+          where: { id: nextBed.id },
+          data: {
+            status: BedStatus.OCCUPIED,
+          },
+        })
+      }
+
+      return result
+    })
+
+    return {
+      code: 200,
+      message: '入住登记更新成功',
+      data: updated,
+    }
+  }
+
   async deleteCheckIn(actor: Actor, id: number) {
     assertRole(actor, roomBedRoles, '仅管理员和前台人员可删除入住登记')
     const record = await this.prisma.checkIn.findUnique({
@@ -1011,6 +1119,83 @@ export class CustomerService {
       code: 201,
       message: '退住登记成功',
       data: record,
+    }
+  }
+
+  async updateCheckOut(actor: Actor, id: number, payload: UpdateCheckOutDto) {
+    assertRole(actor, roomBedRoles, '仅管理员和前台人员可编辑退住登记')
+    const record = await this.prisma.checkOut.findUnique({
+      where: { id },
+      include: {
+        resident: true,
+      },
+    })
+
+    if (!record) {
+      throw new NotFoundException('退住记录不存在')
+    }
+
+    const latestCheckOut = await this.prisma.checkOut.findFirst({
+      where: {
+        residentId: record.residentId,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+      select: {
+        id: true,
+      },
+    })
+
+    if (!latestCheckOut || latestCheckOut.id !== id) {
+      throw new BadRequestException('仅允许编辑该客户最近一次退住登记')
+    }
+
+    if (
+      record.resident.status !== ResidenceStatus.CHECKED_OUT ||
+      record.resident.currentBedId !== null
+    ) {
+      throw new BadRequestException('该退住记录已影响后续流程，无法直接编辑')
+    }
+
+    const latestCheckIn = await this.prisma.checkIn.findFirst({
+      where: {
+        residentId: record.residentId,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+      select: {
+        checkInAt: true,
+      },
+    })
+
+    const nextCheckOutAt = new Date(payload.checkOutAt)
+    if (latestCheckIn && nextCheckOutAt < latestCheckIn.checkInAt) {
+      throw new BadRequestException('退住时间不能早于最近一次入住时间')
+    }
+
+    const updated = await this.prisma.checkOut.update({
+      where: { id },
+      data: {
+        checkOutAt: nextCheckOutAt,
+        reason: normalizeText(payload.reason),
+        handoverNote: normalizeText(payload.handoverNote),
+      },
+      include: {
+        resident: true,
+        bed: {
+          include: {
+            room: true,
+          },
+        },
+      },
+    })
+
+    return {
+      code: 200,
+      message: '退住登记更新成功',
+      data: updated,
     }
   }
 

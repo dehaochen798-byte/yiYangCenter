@@ -26,6 +26,8 @@ import {
   SaveServiceFocusDto,
   SaveServiceTargetDto,
   SaveUserDto,
+  UpdateCheckInDto,
+  UpdateCheckOutDto,
 } from '../../../modules/customer/dto/customer.dto.js'
 import type { Actor } from '../../../common/rbac/rbac.types.js'
 import {
@@ -330,6 +332,20 @@ export class CustomerController {
     )
   }
 
+  @Patch('check-ins/:id')
+  updateCheckIn(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: UpdateCheckInDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkInsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
+    )
+  }
+
   @Delete('check-ins/:id')
   deleteCheckIn(@Req() request: GatewayRequest, @Param('id') id: string) {
     assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
@@ -357,6 +373,20 @@ export class CustomerController {
       SERVICE_NAMES.care,
       CARE_PATTERNS.checkOutsCreate,
       this.gatewayClient.withActor(request.user, body)
+    )
+  }
+
+  @Patch('check-outs/:id')
+  updateCheckOut(
+    @Req() request: GatewayRequest,
+    @Param('id') id: string,
+    @Body() body: UpdateCheckOutDto
+  ) {
+    assertGatewayRole(request.user, gatewayRoleMatrix.roomBedBiz)
+    return this.gatewayClient.send(
+      SERVICE_NAMES.care,
+      CARE_PATTERNS.checkOutsUpdate,
+      this.gatewayClient.withActorAndUpdate(request.user, Number(id), body)
     )
   }
 

@@ -26,6 +26,14 @@ export function createCheckIn(data: Partial<CheckInItem>) {
   })
 }
 
+export function updateCheckIn(id: number, data: Partial<CheckInItem>) {
+  return request<CheckInItem>({
+    url: `/api/customer/check-ins/${id}`,
+    method: 'patch',
+    data,
+  })
+}
+
 export function deleteCheckIn(id: number) {
   return request<void>({
     url: `/api/customer/check-ins/${id}`,

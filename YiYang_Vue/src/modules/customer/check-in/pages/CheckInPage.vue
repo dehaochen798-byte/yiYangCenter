@@ -26,8 +26,9 @@
           <template #default="{ row }">{{ formatDateTime(row.checkInAt) }}</template>
         </el-table-column>
         <el-table-column prop="note" label="备注" min-width="220" show-overflow-tooltip />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="160" fixed="right">
           <template #default="{ row }">
+            <el-button text type="primary" @click="startEdit(row)">编辑</el-button>
             <el-button text type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -38,14 +39,14 @@
 
   <el-dialog
     v-model="dialogVisible"
-    title="办理入住"
+    :title="dialogTitle"
     width="680px"
     destroy-on-close
     @closed="resetForm"
   >
     <el-form label-position="top" :model="form" @submit.prevent>
       <el-form-item label="客户">
-        <el-select v-model="form.residentId" class="full-width" filterable>
+        <el-select v-model="form.residentId" class="full-width" filterable :disabled="Boolean(form.id)">
           <el-option
             v-for="resident in availableResidents"
             :key="resident.id"
@@ -80,7 +81,9 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="closeDialog">取消</el-button>
-        <el-button type="primary" @click="submitForm">提交入住登记</el-button>
+        <el-button type="primary" @click="submitForm">
+          {{ form.id ? '更新入住登记' : '提交入住登记' }}
+        </el-button>
       </div>
     </template>
   </el-dialog>
@@ -94,37 +97,51 @@ import {
   createCheckIn,
   deleteCheckIn,
   getCheckIns,
+  updateCheckIn,
   type CheckInItem,
 } from '@/modules/customer/check-in/api'
 import { getResidents, type ResidentItem } from '@/modules/customer/user/api'
 import { formatDateTime } from '@/modules/shared/utils/format'
 import { validateFieldTypes } from '@/modules/shared/utils/form-validators'
 
+type CheckInForm = {
+  id: number | null
+  residentId: number | null
+  bedId: number | null
+  checkInAt: string
+  note: string
+}
+
 const checkIns = ref<CheckInItem[]>([])
 const residents = ref<ResidentItem[]>([])
 const beds = ref<BedItem[]>([])
 const dialogVisible = ref(false)
-const form = reactive({
-  residentId: null as number | null,
-  bedId: null as number | null,
-  checkInAt: new Date().toISOString().slice(0, 19),
-  note: '',
-})
+const form = reactive<CheckInForm>(createForm())
+const dialogTitle = computed(() => (form.id ? '编辑入住登记' : '办理入住'))
 
 const availableResidents = computed(() =>
-  residents.value.filter((item) => !item.currentBedId && item.status !== 'ACTIVE')
+  residents.value.filter(
+    (item) => item.id === form.residentId || (!item.currentBedId && item.status !== 'ACTIVE')
+  )
 )
-const availableBeds = computed(() => beds.value.filter((item) => item.status === 'VACANT'))
+const availableBeds = computed(() =>
+  beds.value.filter((item) => item.id === form.bedId || item.status === 'VACANT')
+)
 
 onMounted(loadData)
 
-function resetForm() {
-  Object.assign(form, {
+function createForm(): CheckInForm {
+  return {
+    id: null,
     residentId: null,
     bedId: null,
     checkInAt: new Date().toISOString().slice(0, 19),
     note: '',
-  })
+  }
+}
+
+function resetForm() {
+  Object.assign(form, createForm())
 }
 
 function openCreateDialog() {
@@ -145,6 +162,17 @@ async function loadData() {
   checkIns.value = checkInRes.data
   residents.value = residentRes.data
   beds.value = bedRes.data
+}
+
+function startEdit(row: CheckInItem) {
+  Object.assign(form, {
+    id: row.id,
+    residentId: row.residentId,
+    bedId: row.bedId,
+    checkInAt: row.checkInAt,
+    note: row.note || '',
+  })
+  dialogVisible.value = true
 }
 
 async function handleDelete(row: CheckInItem) {
@@ -179,13 +207,23 @@ async function submitForm() {
     return
   }
 
-  await createCheckIn({
-    residentId: form.residentId || undefined,
-    bedId: form.bedId || undefined,
-    checkInAt: form.checkInAt,
-    note: form.note,
-  })
-  ElMessage.success('入住登记成功')
+  if (form.id) {
+    await updateCheckIn(form.id, {
+      bedId: form.bedId || undefined,
+      checkInAt: form.checkInAt,
+      note: form.note,
+    })
+    ElMessage.success('入住登记更新成功')
+  } else {
+    await createCheckIn({
+      residentId: form.residentId || undefined,
+      bedId: form.bedId || undefined,
+      checkInAt: form.checkInAt,
+      note: form.note,
+    })
+    ElMessage.success('入住登记成功')
+  }
+
   closeDialog()
   resetForm()
   await loadData()

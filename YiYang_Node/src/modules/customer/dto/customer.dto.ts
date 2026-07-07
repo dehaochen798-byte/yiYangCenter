@@ -257,11 +257,40 @@ export class CreateCheckInDto {
   note?: string
 }
 
+export class UpdateCheckInDto {
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  bedId: number = 0
+
+  @IsString()
+  checkInAt: string = nowIsoString()
+
+  @ToOptionalString()
+  @IsOptional()
+  @IsString()
+  note?: string
+}
+
 export class CreateCheckOutDto {
   @Transform(({ value }) => Number(value))
   @IsInt()
   residentId: number = 0
 
+  @IsString()
+  checkOutAt: string = nowIsoString()
+
+  @ToOptionalString()
+  @IsOptional()
+  @IsString()
+  reason?: string
+
+  @ToOptionalString()
+  @IsOptional()
+  @IsString()
+  handoverNote?: string
+}
+
+export class UpdateCheckOutDto {
   @IsString()
   checkOutAt: string = nowIsoString()
 

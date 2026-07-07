@@ -27,6 +27,14 @@ export function createCheckOut(data: Partial<CheckOutItem>) {
   })
 }
 
+export function updateCheckOut(id: number, data: Partial<CheckOutItem>) {
+  return request<CheckOutItem>({
+    url: `/api/customer/check-outs/${id}`,
+    method: 'patch',
+    data,
+  })
+}
+
 export function deleteCheckOut(id: number) {
   return request<void>({
     url: `/api/customer/check-outs/${id}`,
