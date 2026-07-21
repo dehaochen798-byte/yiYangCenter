@@ -14,7 +14,7 @@ interface buttonItem {
   label?: string
 }
 let buttons: buttonItem[] = [
-  { key: 1, url: '/auth/text1', label: '进入‘手搓简单事件’' },
+  { key: 1, url: '/auth/text1', label: '进入‘简单事件’' },
   { key: 12, url: '', label: '第一个按钮' },
   { key: 122, url: '', label: '第一个按钮' },
   { key: 1222, url: '', label: '第一个按钮' },
