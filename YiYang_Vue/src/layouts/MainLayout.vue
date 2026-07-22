@@ -137,7 +137,7 @@ import type { TabsPaneContext } from 'element-plus'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ROLE_KEYS } from '@/constants/rbac'
+import { ROLE_KEYS, type RoleKey } from '@/constants/rbac'
 import { canAccessRoles } from '@/utils/permission'
 import { useAuthStore } from '../modules/auth/store/auth.store'
 import { useAppStore } from '../stores/app.store'
@@ -145,7 +145,7 @@ import { useAppStore } from '../stores/app.store'
 type MenuItem = {
   index: string
   title: string
-  roles?: string[]
+  roles?: RoleKey[]
 }
 
 type MenuGroup = {

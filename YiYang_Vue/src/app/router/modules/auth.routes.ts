@@ -3,6 +3,14 @@ import AuthLayout from '@/layouts/AuthLayout.vue'
 
 export const authRoutes: RouteRecordRaw[] = [
   {
+    path: '/login',
+    redirect: '/auth/login',
+  },
+  {
+    path: '/register',
+    redirect: '/auth/register',
+  },
+  {
     path: '/auth',
     component: AuthLayout,
     redirect: '/auth/login',
